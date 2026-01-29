@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { useWallet } from '@demox-labs/aleo-wallet-adapter-react';
 import { Navbar } from '@/components/navbar';
-import { FooterStats } from '@/components/footer-stats';
 import { Portfolio } from '@/components/portfolio';
 import { MarketCard, MarketFilters, FeaturedMarket, EventDetail } from '@/components/market';
 import { useMarkets } from '@/hooks';
-import { markets, mockActivities, platformStats } from '@/lib/data';
+import { markets, mockActivities } from '@/lib/data';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'market' | 'portfolio'>('market');
@@ -79,14 +78,6 @@ export default function HomePage() {
                 <MarketCard key={market.id} market={market} onClick={selectMarket} />
               ))}
             </div>
-
-            {/* Footer Stats */}
-            <FooterStats
-              totalVolume={platformStats.totalVolume}
-              activeTraders={platformStats.activeTraders}
-              totalMarkets={platformStats.totalMarkets}
-              zkPrivacy={platformStats.zkPrivacy}
-            />
           </div>
         )}
       </main>
