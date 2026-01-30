@@ -1,0 +1,29 @@
+[
+    {
+        "title": "ETH-Moon-Launch",
+        "threshold": 5000,
+        "snapshotTime": 1740000000,
+        "metric": "eth_price",
+        "description": "Will ETH reach $5000 by late February?",
+        "optionA": "MOON",
+        "optionB": "STAY"
+    },
+    {
+        "title": "Extreme-Fear-Check",
+        "threshold": 20,
+        "snapshotTime": 1739000000,
+        "metric": "fear_greed",
+        "description": "Will markets enter Extreme Fear (<20) by mid-February?",
+        "optionA": "FEARFUL",
+        "optionB": "CALM"
+    },
+    {
+        "title": "USDT-Stability",
+        "threshold": 0.99,
+        "snapshotTime": 1738320000,
+        "metric": "stablecoin_peg",
+        "description": "Will USDT maintain its peg above $0.99?",
+        "optionA": "STABLE",
+        "optionB": "DEPEG"
+    }
+]
