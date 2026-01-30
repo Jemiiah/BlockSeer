@@ -36,6 +36,19 @@ app.get("/markets/locked", async (req, res) => {
     }
 });
 
+// Get market by ID
+app.get("/markets/:id", async (req, res) => {
+    try {
+        const market = await db.getMarketById(req.params.id);
+        if (!market) {
+            return res.status(404).json({ error: "Market not found" });
+        }
+        res.json(market);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 API Server running on http://localhost:${PORT}`);
     db.initDb();

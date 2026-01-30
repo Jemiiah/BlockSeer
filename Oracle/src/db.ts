@@ -71,7 +71,7 @@ export async function addMarket(
 
 export async function getPendingMarkets(): Promise<any[]> {
     try {
-        const query = `SELECT market_id, deadline, threshold, metric_type FROM markets WHERE status = 'pending'`;
+        const query = `SELECT * FROM markets WHERE status = 'pending'`;
         const { rows } = await pool.query(query);
         return rows;
     } catch (err: any) {
@@ -82,7 +82,7 @@ export async function getPendingMarkets(): Promise<any[]> {
 
 export async function getLockedMarkets(): Promise<any[]> {
     try {
-        const query = `SELECT market_id, deadline, threshold, metric_type FROM markets WHERE status = 'locked'`;
+        const query = `SELECT * FROM markets WHERE status = 'locked'`;
         const { rows } = await pool.query(query);
         return rows;
     } catch (err: any) {
@@ -148,6 +148,17 @@ export async function updateMarketMetadata(
         console.log(`🏷️ Updated labels for market ${marketId}.`);
     } catch (err: any) {
         console.error(`❌ Error updating metadata for market ${marketId}:`, err.message);
+        throw err;
+    }
+}
+
+export async function getMarketById(marketId: string): Promise<any | null> {
+    try {
+        const query = `SELECT * FROM markets WHERE market_id = $1`;
+        const { rows } = await pool.query(query, [marketId]);
+        return rows.length > 0 ? rows[0] : null;
+    } catch (err: any) {
+        console.error(`❌ Error fetching market ${marketId}:`, err.message);
         throw err;
     }
 }
