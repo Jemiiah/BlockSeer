@@ -81,6 +81,14 @@ npm run cli -- create-market "USDT-Depeg" 0.98 1738320000 --metric stablecoin_pe
 ```
 
 
+### 📦 Batch Loading
+You can create multiple markets at once using a JSON file.
+1. Edit `markets.json` with your desired markets.
+2. Run the loader:
+   ```bash
+   npm run load-markets
+   ```
+
 ## Project Structure
 - `src/api.ts`: Express server implementation.
 - `src/worker.ts`: Background monitoring logic.
