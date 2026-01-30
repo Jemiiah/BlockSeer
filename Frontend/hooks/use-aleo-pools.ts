@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Market } from '@/types';
-import { getAllPools, AleoPool } from '@/lib/aleo-client';
+import { Market, MarketCategory } from '@/types';
+import { fetchAllMarkets, fetchPendingMarkets, fetchLockedMarkets, ApiMarket } from '@/lib/api-client';
 
 // Dummy pools to show when no real pools exist
 const DUMMY_POOLS: Market[] = [
@@ -56,28 +56,33 @@ const DUMMY_POOLS: Market[] = [
   },
 ];
 
-// Convert Aleo pool to Market type
-function aleoPoolToMarket(pool: AleoPool, index: number): Market {
+// Convert API market to Market type
+function apiMarketToMarket(market: ApiMarket): Market {
   // Calculate yes/no prices based on stakes
-  const totalStakes = pool.option_a_stakes + pool.option_b_stakes;
+  const optionAStakes = market.option_a_stakes || 0;
+  const optionBStakes = market.option_b_stakes || 0;
+  const totalStakes = optionAStakes + optionBStakes;
+
   let yesPrice = 50;
   let noPrice = 50;
 
   if (totalStakes > 0) {
-    yesPrice = Math.round((pool.option_a_stakes / totalStakes) * 100);
+    yesPrice = Math.round((optionAStakes / totalStakes) * 100);
     noPrice = 100 - yesPrice;
   }
 
-  // Determine status based on pool status
+  // Determine status based on API status
   let status: 'live' | 'upcoming' | 'resolved' = 'upcoming';
-  if (pool.status === 0) {
+  if (market.status === 'pending') {
     status = 'live';
-  } else if (pool.status === 2) {
+  } else if (market.status === 'locked') {
+    status = 'upcoming';
+  } else if (market.status === 'resolved') {
     status = 'resolved';
   }
 
   // Convert deadline to readable date
-  const deadline = new Date(pool.deadline * 1000);
+  const deadline = market.deadline ? new Date(market.deadline * 1000) : new Date();
   const endDate = deadline.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -85,31 +90,36 @@ function aleoPoolToMarket(pool: AleoPool, index: number): Market {
   });
 
   // Convert total staked to volume string (microcredits to Aleo)
-  const volumeInAleo = pool.total_staked / 1_000_000;
+  const totalStaked = market.total_staked || 0;
+  const volumeInAleo = totalStaked / 1_000_000;
   const volume = volumeInAleo >= 1000
     ? `$${(volumeInAleo / 1000).toFixed(1)}K`
     : `$${volumeInAleo.toFixed(2)}`;
 
+  const traders = market.total_predictions || 0;
+
   return {
-    id: pool.id,
-    title: `Pool #${index + 1}`, // Since titles are hashed, use index
-    subtitle: `Prediction pool with ${pool.total_no_of_stakes} predictions`,
-    category: 'DeFi',
+    id: market.id,
+    title: market.title || `Market ${market.id}`,
+    subtitle: market.description || `Prediction market with ${traders} predictions`,
+    category: 'DeFi' as MarketCategory,
     endDate,
     volume,
-    traders: pool.total_no_of_stakes,
+    traders,
     yesPrice,
     noPrice,
     change: 0,
     status,
-    description: `A prediction pool on Manifold. Total staked: ${volumeInAleo.toFixed(2)} ALEO.`,
-    resolution: 'This market resolves based on the pool outcome determined by the admin.',
+    description: market.description || `A prediction market on Manifold. Total staked: ${volumeInAleo.toFixed(2)} ALEO.`,
+    resolution: 'This market resolves based on the outcome determined by the oracle.',
     history: [yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice],
   };
 }
 
 export function useAleoPools() {
   const [pools, setPools] = useState<Market[]>(DUMMY_POOLS);
+  const [pendingPools, setPendingPools] = useState<Market[]>([]);
+  const [lockedPools, setLockedPools] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,24 +128,38 @@ export function useAleoPools() {
     setError(null);
 
     try {
-      // Fetch all pools from the pools_id storage on chain
-      const aleoPools = await getAllPools();
+      // Fetch all markets from backend API
+      const [allMarkets, pending, locked] = await Promise.all([
+        fetchAllMarkets(),
+        fetchPendingMarkets(),
+        fetchLockedMarkets(),
+      ]);
 
-      if (aleoPools.length > 0) {
-        const fetchedPools = aleoPools.map((pool, i) => aleoPoolToMarket(pool, i));
-        setPools(fetchedPools);
+      // Convert API markets to Market type
+      const allPools = allMarkets.map(apiMarketToMarket);
+      const pendingMarkets = pending.map(apiMarketToMarket);
+      const lockedMarkets = locked.map(apiMarketToMarket);
+
+      if (allPools.length > 0) {
+        setPools(allPools);
+        setPendingPools(pendingMarkets);
+        setLockedPools(lockedMarkets);
         setIsLoading(false);
         return;
       }
 
       // No real pools found, use dummy pools
-      console.log('No pools found on chain, using dummy data');
+      console.log('No markets found from backend, using dummy data');
       setPools(DUMMY_POOLS);
+      setPendingPools([]);
+      setLockedPools([]);
     } catch (err) {
-      console.error('Error fetching pools:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch pools');
+      console.error('Error fetching markets:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch markets');
       // Fall back to dummy pools on error
       setPools(DUMMY_POOLS);
+      setPendingPools([]);
+      setLockedPools([]);
     } finally {
       setIsLoading(false);
     }
@@ -151,6 +175,8 @@ export function useAleoPools() {
 
   return {
     pools,
+    pendingPools,
+    lockedPools,
     isLoading,
     error,
     refetch,
