@@ -29,6 +29,11 @@ program predictionprivacyhack.aleo {
         claimed: bool,
     }
 
+    record Winnings {
+        prediction_id: field,
+        owner: address,
+        amount_won: u64,
+    }
 
     // Save proposal info in public storage.
     mapping pools: field => Pool; // pool id => Pool details
@@ -177,4 +182,72 @@ program predictionprivacyhack.aleo {
         let current_total = Mapping::get(total_predictions, pool_id);
         Mapping::set(total_predictions, pool_id, current_total + 1u64);
     }
+
+    // User checks if their prediction was correct, function will fail if the winning option does not match what is in the prediction record
+    async transition check_prediction (prediction: Prediction) -> (Future) {
+        return finalize_check_prediction(prediction.pool_id, prediction.option);
+    }
+
+    async function finalize_check_prediction (
+        pool_id: field, user_option: u64
+    )  {
+        let pool_created = Mapping::contains(pools, pool_id);
+        assert(pool_created); // ensure pool exists
+
+        let pool = Mapping::get(pools, pool_id);
+        assert_eq(pool.status, 2u8);  // ensure pool is resolved
+
+        assert_eq(pool.winning_option, user_option); // check if user's option matches winning option
+    }
+
+    async transition collect_winnings (
+        winning_option: u64, 
+        total_staked: u64, 
+        option_a_stakes: u64, 
+        option_b_stakes: u64, 
+        prediction: Prediction
+    ) -> (Prediction, Future) {
+        // Check if user won
+        assert_eq(winning_option, prediction.option);
+        // Check if already claimed
+        assert_eq(prediction.claimed, false);
+
+        let winnings_amount = calculate_winnings(prediction.amount, total_staked, option_a_stakes + option_b_stakes);
+
+        let updated_prediction = Prediction {
+            id: prediction.id,
+            owner: prediction.owner,
+            pool_id: prediction.pool_id,
+            option: prediction.option,
+            amount: winnings_amount,
+            claimed: true,
+        };
+
+        // todo(): logic to transfer winnings to user would go here
+        return (updated_prediction, finalize_collect_winnings(prediction.pool_id, prediction.id, prediction.amount, winning_option, total_staked, option_a_stakes, option_b_stakes));
+    }
+
+    async function finalize_collect_winnings (pool_id: field, prediction_id: field, amount: u64, winning_option: u64, total_staked: u64, 
+        option_a_stakes: u64, 
+        option_b_stakes: u64)  {
+        let pool_created = Mapping::contains(pools, pool_id);
+        assert(pool_created); // ensure pool exists
+
+        let pool = Mapping::get(pools, pool_id);
+        assert_eq(pool.status, 2u8);  // ensure pool is resolved   
+        assert_eq(pool.winning_option, winning_option); // ensure the winning option matches
+        assert_eq(pool.total_staked, total_staked); // ensure total staked matches
+        assert_eq(pool.option_a_stakes, option_a_stakes); // ensure option a stakes matches
+        assert_eq(pool.option_b_stakes, option_b_stakes); // ensure option b
+    }
+
+    // helper function to calculate winnings
+    function calculate_winnings(amount_staked: u64, total_staked: u64, total_winning_stakes: u64) -> u64  {
+        if total_winning_stakes == 0u64 {
+            return 0u64;
+        }
+        return (amount_staked * total_staked) / total_winning_stakes;
+    }
+
+
 }

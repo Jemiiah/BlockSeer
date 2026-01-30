@@ -56,3 +56,6 @@ oracle.db
 # Don't ignore example files
 !.env.example
 !markets.json
+
+node_modules/
+node_modules
