@@ -27,6 +27,9 @@ Represents a prediction pool/market.
 - `total_staked` (u64): Total amount staked across all options
 - `option_a_stakes` (u64): Total stakes for option A
 - `option_b_stakes` (u64): Total stakes for option B
+- `total_no_of_stakes` (u64): Total number of stakes placed (NEW)
+- `total_no_of_stakes_option_a` (u64): Total number of stakes for option A (NEW)
+- `total_no_of_stakes_option_b` (u64): Total number of stakes for option B (NEW)
 
 ### Prediction (Record)
 Represents a user's prediction. This is a private record owned by the user.
@@ -53,8 +56,7 @@ Represents user winnings (currently defined but not fully implemented).
 
 - `pools`: Maps pool ID to Pool details
 - `total_predictions`: Maps pool ID to total number of predictions made
-- `user_predictions`: Maps user address to their prediction IDs (not fully implemented)
-- `pool_predictions`: Maps pool ID to prediction IDs (not fully implemented)
+- `user_predictions`: Storage array for tracking user predictions (NEW - changed from mapping to storage)
 
 ---
 
@@ -94,8 +96,9 @@ Represents user winnings (currently defined but not fully implemented).
 1. Generates pool ID by hashing the title
 2. Verifies caller is admin
 3. Creates new Pool with status = 0 (open)
-4. Stores pool in mapping
-5. Initializes total_predictions count to 0
+4. Initializes stake tracking fields (total_staked, option_a_stakes, option_b_stakes, and NEW stake count fields)
+5. Stores pool in mapping
+6. Initializes total_predictions count to 0
 
 **Validation:**
 - Only admin can call this function
@@ -167,6 +170,7 @@ Represents user winnings (currently defined but not fully implemented).
 4. Creates Prediction record
 5. Updates pool's total_staked and option stakes
 6. Increments total_predictions count
+7. Updates stake count tracking for both total and option-specific stakes (NEW)
 
 **Validation:**
 - Pool must exist
@@ -278,11 +282,33 @@ winnings = (amount_staked * total_staked) / total_winning_stakes
 ## Known Limitations & TODOs
 
 1. **Token Transfer:** Actual token transfer logic for staking and winnings distribution is not implemented
-2. **User Predictions Tracking:** `user_predictions` mapping is defined but not fully implemented
-3. **Pool Predictions Storage:** `pool_predictions` only stores one prediction ID instead of an array
-4. **No Refund Mechanism:** No way to cancel predictions or get refunds
-5. **Fixed Array Sizes:** User and pool predictions use fixed-size arrays ([field; 1]) which limits scalability
-6. **No Fee Mechanism:** No platform fee or admin commission structure
+2. **No Refund Mechanism:** No way to cancel predictions or get refunds
+3. **No Fee Mechanism:** No platform fee or admin commission structure
+
+---
+
+## Recent Changes (v2.0)
+
+### New Features Added:
+1. **Enhanced Stake Tracking:** Added three new fields to Pool struct to track the number of stakes:
+   - `total_no_of_stakes`: Total number of individual stake transactions
+   - `total_no_of_stakes_option_a`: Count of stakes placed on option A
+   - `total_no_of_stakes_option_b`: Count of stakes placed on option B
+   
+2. **Improved Storage Architecture:**
+   - Changed `user_predictions` from a mapping to a storage array for better flexibility
+   - Removed `pool_predictions` mapping that was only storing single prediction IDs
+
+3. **Enhanced `collect_winnings` Function:**
+   - Now includes validation for pool stakes data (total_staked, option_a_stakes, option_b_stakes)
+   - Ensures data consistency between prediction and pool records
+   - Better safeguards against invalid winnings claims
+
+### Benefits:
+- More detailed pool analytics and user statistics
+- Better ability to track prediction participation rates
+- Enhanced data validation in winnings collection
+- More flexible user prediction tracking
 
 ---
 
