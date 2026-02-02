@@ -11,8 +11,8 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'market' | 'portfolio'>('market');
   const { connected: isConnected } = useWallet();
 
-  // Fetch pools from backend API (with dummy fallback for instant loading)
-  const { pools, isLoading: isLoadingPools, isBackendLoading, isDummyData } = useAleoPools();
+  // Fetch pools from backend API
+  const { pools, isLoading: isLoadingPools, error } = useAleoPools();
 
   const {
     filter,
@@ -55,15 +55,9 @@ export default function HomePage() {
               <p className="text-zinc-400 text-lg">
                 Trade on crypto events with zero-knowledge privacy on Aleo.
               </p>
-              {isBackendLoading && (
-                <p className="text-blue-400/70 text-sm mt-2 flex items-center gap-2">
-                  <span className="animate-spin h-3 w-3 border border-blue-400 border-t-transparent rounded-full"></span>
-                  Loading markets from blockchain...
-                </p>
-              )}
-              {!isBackendLoading && isDummyData && (
-                <p className="text-amber-400/70 text-sm mt-2">
-                  Showing sample markets. Create a pool to see real predictions.
+              {error && (
+                <p className="text-red-400/70 text-sm mt-2">
+                  Error loading markets: {error}
                 </p>
               )}
             </div>
@@ -81,8 +75,19 @@ export default function HomePage() {
 
             {/* Loading State */}
             {isLoadingPools ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-zinc-400">Loading markets from blockchain...</p>
+              </div>
+            ) : filteredMarkets.length === 0 ? (
+              /* Empty State */
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <p className="text-zinc-400 text-lg mb-2">No markets found</p>
+                <p className="text-zinc-500 text-sm">
+                  {pools.length === 0
+                    ? "No prediction markets available yet."
+                    : "No markets match your current filter."}
+                </p>
               </div>
             ) : (
               /* Market Grid */
