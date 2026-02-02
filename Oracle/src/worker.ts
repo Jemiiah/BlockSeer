@@ -240,15 +240,34 @@ export async function startWorker() {
             for (const market of marketsNotOnChain) {
                 const { market_id, title } = market;
 
+                // First check if market already exists on-chain (in case previous tx succeeded but DB wasn't updated)
+                const alreadyExists = await marketExistsOnChain(market_id);
+                if (alreadyExists) {
+                    console.log(`✅ Market "${title}" already exists on-chain. Updating DB...`);
+                    await db.markOnChain(market_id);
+                    continue;
+                }
+
                 console.log(`📝 Market "${title}" not on-chain. Creating...`);
                 const success = await createMarketOnChain(market);
                 if (success) {
-                    // Mark as on-chain in database (transaction submitted)
-                    await db.markOnChain(market_id);
-                    console.log(`✅ Market "${title}" creation transaction submitted.`);
+                    // Note: Transaction was broadcasted but not yet confirmed
+                    // The next sync cycle will verify if it exists on-chain
+                    console.log(`📤 Market "${title}" creation transaction broadcasted. Will verify on next cycle.`);
                 }
                 // Add delay to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+
+            // 1b. Verify pending on-chain transactions by checking if pools exist
+            // This handles the case where transaction was broadcasted but markOnChain wasn't called
+            for (const market of marketsNotOnChain) {
+                const { market_id, title } = market;
+                const existsNow = await marketExistsOnChain(market_id);
+                if (existsNow) {
+                    await db.markOnChain(market_id);
+                    console.log(`✅ Verified: Market "${title}" confirmed on-chain.`);
+                }
             }
 
             // 2. Handle Pending -> Locked
