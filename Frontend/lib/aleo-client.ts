@@ -1,24 +1,8 @@
 // Program ID - deployed version
 const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
 
-// Network API - using mainnet endpoint
-const NETWORK_URL = 'https://api.explorer.provable.com/v1';
-
-// Lazy load the SDK to avoid SSR issues
-let networkClient: any = null;
-
-async function getNetworkClient() {
-  if (!networkClient) {
-    try {
-      const { AleoNetworkClient } = await import('@provablehq/sdk');
-      networkClient = new AleoNetworkClient(NETWORK_URL);
-    } catch (error) {
-      console.error('Failed to load AleoNetworkClient:', error);
-      return null;
-    }
-  }
-  return networkClient;
-}
+// Network API - using testnet endpoint
+const NETWORK_URL = 'https://api.explorer.provable.com/v1/testnet';
 
 // Pool structure matching the Leo program
 export interface AleoPool {
@@ -138,31 +122,34 @@ function parsePoolResponse(response: string): AleoPool | null {
   }
 }
 
-// Get program mapping names using SDK
-export async function getMappingNames(): Promise<string[]> {
-  try {
-    const client = await getNetworkClient();
-    if (!client) return [];
-
-    const names = await client.getProgramMappingNames(PROGRAM_ID);
-    return names || [];
-  } catch (error) {
-    console.error('Error fetching mapping names:', error);
-    return [];
-  }
-}
-
-// Get a mapping value using SDK
+// Fetch a mapping value via the Aleo REST API directly
 async function getMappingValue(mappingName: string, key: string): Promise<string | null> {
   try {
-    const client = await getNetworkClient();
-    if (!client) return null;
-
-    const value = await client.getProgramMappingValue(PROGRAM_ID, mappingName, key);
+    const url = `${NETWORK_URL}/program/${PROGRAM_ID}/mapping/${mappingName}/${key}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const text = await response.text();
+    // The API returns JSON-encoded strings, strip surrounding quotes
+    const value = text.replace(/^"|"$/g, '').trim();
+    if (!value || value === 'null') return null;
     return value;
   } catch (error) {
     console.error(`Error fetching mapping value for ${mappingName}[${key}]:`, error);
     return null;
+  }
+}
+
+// Get program mapping names using REST API
+export async function getMappingNames(): Promise<string[]> {
+  try {
+    const url = `${NETWORK_URL}/program/${PROGRAM_ID}/mappings`;
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const names = await response.json();
+    return names || [];
+  } catch (error) {
+    console.error('Error fetching mapping names:', error);
+    return [];
   }
 }
 

@@ -1,8 +1,12 @@
 // Backend API client for fetching markets
+// Direct backend URL (used by admin POST and exported for reference)
 const isDev = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
-const API_BASE_URL = isDev
-    ? 'http://localhost:3000'
+export const API_BASE_URL = isDev
+    ? 'http://localhost:3001'
     : 'https://blockseer.onrender.com';
+
+// Proxy URL (same-origin, avoids CORS issues in the browser)
+const PROXY_URL = '/api/markets';
 
 // API response types matching backend format
 export interface ApiMarket {
@@ -20,10 +24,10 @@ export interface ApiMarket {
   option_b_label: string;
 }
 
-// Fetch all markets
+// Fetch all markets (through Next.js proxy to avoid CORS)
 export async function fetchAllMarkets(): Promise<ApiMarket[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/markets`);
+    const response = await fetch(PROXY_URL);
     if (!response.ok) {
       throw new Error(`Failed to fetch markets: ${response.statusText}`);
     }
@@ -31,36 +35,6 @@ export async function fetchAllMarkets(): Promise<ApiMarket[]> {
     return data.markets || data || [];
   } catch (error) {
     console.error('Error fetching all markets:', error);
-    return [];
-  }
-}
-
-// Fetch pending markets only
-export async function fetchPendingMarkets(): Promise<ApiMarket[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/markets/pending`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch pending markets: ${response.statusText}`);
-    }
-    const data = await response.json();
-    return data.markets || data || [];
-  } catch (error) {
-    console.error('Error fetching pending markets:', error);
-    return [];
-  }
-}
-
-// Fetch locked markets only
-export async function fetchLockedMarkets(): Promise<ApiMarket[]> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/markets/locked`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch locked markets: ${response.statusText}`);
-    }
-    const data = await response.json();
-    return data.markets || data || [];
-  } catch (error) {
-    console.error('Error fetching locked markets:', error);
     return [];
   }
 }

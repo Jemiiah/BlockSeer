@@ -14,6 +14,12 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
   const trendingMarkets = markets.slice(0, 5);
 
   useEffect(() => {
+    if (activeIndex >= trendingMarkets.length) {
+      setActiveIndex(0);
+    }
+  }, [trendingMarkets.length]);
+
+  useEffect(() => {
     if (trendingMarkets.length === 0) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % trendingMarkets.length);
@@ -39,15 +45,16 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
       {/* Main Card */}
       <Link
         href={`/market/${market.id}`}
-        className="block relative bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 border border-zinc-700/50 rounded-3xl p-8 cursor-pointer hover:border-zinc-600 transition-all duration-300 overflow-hidden min-h-[280px]"
+        className="block relative bg-[hsl(230,15%,8%)]/80 backdrop-blur-xl border border-white/[0.08] rounded-3xl p-8 cursor-pointer hover:border-white/[0.12] transition-all duration-300 overflow-hidden min-h-[280px]"
       >
-        {/* Background gradient accent */}
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-500/5 to-transparent pointer-events-none" />
+        {/* Glowing orbs behind card */}
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-violet-500/8 rounded-full blur-[60px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col h-full">
           {/* Category badge */}
           <div className="mb-4">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/[0.06] text-white/70 border border-white/[0.08]">
               {market.category}
             </span>
           </div>
@@ -57,7 +64,7 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight">
               {market.title}
             </h2>
-            <p className="text-zinc-400 text-base md:text-lg leading-relaxed max-w-2xl">
+            <p className="text-[hsl(230,10%,50%)] text-base md:text-lg leading-relaxed max-w-2xl">
               {market.description}
             </p>
           </div>
@@ -77,7 +84,7 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
             </div>
 
             {/* Volume and traders */}
-            <div className="flex items-center gap-6 text-zinc-400">
+            <div className="flex items-center gap-6 text-[hsl(230,10%,50%)]">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">{market.volume} vol</span>
@@ -100,7 +107,7 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
         </div>
       </Link>
 
-      {/* Pagination dots */}
+      {/* Gradient pagination dots */}
       <div className="flex items-center justify-center gap-2 mt-4">
         {trendingMarkets.map((_, index) => (
           <button
@@ -109,10 +116,10 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
               e.stopPropagation();
               setActiveIndex(index);
             }}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            className={`h-2 rounded-full transition-all duration-300 ${
               index === activeIndex
-                ? 'bg-white w-6'
-                : 'bg-zinc-600 hover:bg-zinc-500'
+                ? 'w-6 bg-gradient-to-r from-blue-500 to-violet-500'
+                : 'w-2 bg-white/[0.15] hover:bg-white/[0.25]'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />

@@ -23,9 +23,13 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={inter.className}>
         <Providers>
-          <div className="min-h-screen bg-zinc-950">
-            {/* Background gradient */}
-            <div className="fixed inset-0 bg-gradient-to-br from-blue-950/10 via-zinc-950 to-purple-950/10 pointer-events-none" />
+          <div className="min-h-screen bg-[hsl(230,15%,5%)]">
+            {/* Background gradients */}
+            <div className="fixed inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_top_left,hsla(217,70%,25%,0.12),transparent_70%)]" />
+              <div className="absolute bottom-0 right-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_bottom_right,hsla(263,60%,25%,0.10),transparent_70%)]" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50%] h-[50%] bg-[radial-gradient(ellipse_at_center,hsla(190,60%,30%,0.04),transparent_70%)]" />
+            </div>
             <div className="relative">{children}</div>
           </div>
         </Providers>

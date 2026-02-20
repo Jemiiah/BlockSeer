@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react';
-import { Transaction, WalletAdapterNetwork } from '@demox-labs/aleo-wallet-adapter-base';
-import { v4 as uuidv4 } from 'uuid';
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
 // Program ID from the deployed Leo program
 const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
+
+// Native Aleo credits program
+const CREDITS_PROGRAM_ID = 'credits.aleo';
 
 // Default pool ID (will be made dynamic later)
 const DEFAULT_POOL_ID = '1field';
@@ -14,7 +15,7 @@ const DEFAULT_POOL_ID = '1field';
 interface PredictionParams {
   poolId?: string;
   option: 1 | 2; // 1 for option A, 2 for option B
-  amount: number; // Amount in microcredits
+  amount: number; // Amount in ALEO (will be converted to microcredits)
 }
 
 interface PredictionResult {
@@ -23,24 +24,41 @@ interface PredictionResult {
   error?: string;
 }
 
-// Generate a random number for the prediction ID
 function generateRandomNumber(): number {
-  // Generate a random 64-bit unsigned integer (within safe JavaScript integer range)
   return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 }
 
-// Convert a string to a field representation for Aleo
-function stringToField(str: string): string {
-  // If already formatted as a field, return as is
-  if (str.endsWith('field')) {
-    return str;
+/**
+ * Try to extract microcredits balance from a record regardless of format.
+ */
+function extractMicrocredits(record: any): bigint | null {
+  try {
+    const obj = typeof record === 'string' ? JSON.parse(record) : record;
+    const raw =
+      obj?.microcredits ??
+      obj?.data?.microcredits ??
+      obj?.plaintext?.microcredits;
+
+    if (raw == null) return null;
+
+    const str = String(raw)
+      .replace('u64.private', '')
+      .replace('u64.public', '')
+      .replace('u64', '')
+      .trim();
+
+    return BigInt(str);
+  } catch {
+    return null;
   }
-  // For now, use numeric fields
-  return `${str}field`;
 }
 
 export function usePrediction() {
-  const { publicKey, requestTransaction, requestRecords } = useWallet();
+  const {
+    address,
+    executeTransaction,
+    requestRecords,
+  } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
@@ -51,7 +69,7 @@ export function usePrediction() {
       option,
       amount,
     }: PredictionParams): Promise<PredictionResult> => {
-      if (!publicKey) {
+      if (!address) {
         return {
           transactionId: undefined,
           status: 'error',
@@ -59,7 +77,7 @@ export function usePrediction() {
         };
       }
 
-      if (!requestTransaction) {
+      if (!executeTransaction) {
         return {
           transactionId: undefined,
           status: 'error',
@@ -71,77 +89,88 @@ export function usePrediction() {
       setError(null);
 
       try {
-        // Generate random number for prediction ID
         const randomNumber = generateRandomNumber();
-
-        // Format the pool ID as a field
         const formattedPoolId = poolId.endsWith('field') ? poolId : `${poolId}field`;
-
-        // Convert amount to microcredits (1 Aleo = 1,000,000 microcredits)
         const amountInMicrocredits = amount * 1_000_000;
 
-        // First, we need to get the user's credits record
-        // The credits record is required for the predict function
+        // --- Step 1: Try to fetch credits records ---
+        console.log('=== PREDICTION DEBUG ===');
+        console.log('Address:', address);
+        console.log('Amount (ALEO):', amount);
+        console.log('Amount (microcredits):', amountInMicrocredits);
+        console.log('requestRecords available:', !!requestRecords);
+        console.log('executeTransaction available:', !!executeTransaction);
+
         let creditsRecord: string | undefined;
 
         if (requestRecords) {
-          try {
-            // Fetch credits from our prediction program, not credits.aleo
-            const records = await requestRecords(PROGRAM_ID);
-            // Find a credits record with sufficient balance
-            const suitableRecord = records?.find((record: string) => {
-              try {
-                const parsed = JSON.parse(record);
-                // Check if this is a credits record (has microcredits field)
-                if (!parsed.microcredits) return false;
-                const balance = BigInt(parsed.microcredits.replace('u64.private', '').replace('u64', ''));
-                return balance >= BigInt(amountInMicrocredits);
-              } catch {
-                return false;
+          const programsToTry = [CREDITS_PROGRAM_ID, PROGRAM_ID];
+
+          for (const program of programsToTry) {
+            if (creditsRecord) break;
+
+            try {
+              console.log(`Trying requestRecords('${program}', true)...`);
+              const records = await requestRecords(program, true);
+              console.log(`requestRecords('${program}', true) returned ${records?.length ?? 0} records`);
+
+              if (records && records.length > 0) {
+                console.log('First record raw type:', typeof records[0]);
+                console.log('First record raw value:', JSON.stringify(records[0]).slice(0, 500));
+
+                for (const record of records) {
+                  const balance = extractMicrocredits(record);
+                  console.log('Record balance:', balance?.toString());
+                  if (balance !== null && balance >= BigInt(amountInMicrocredits)) {
+                    creditsRecord = typeof record === 'string' ? record : JSON.stringify(record);
+                    console.log('Found suitable record with balance:', balance.toString());
+                    break;
+                  }
+                }
               }
-            });
-            creditsRecord = suitableRecord;
-          } catch (e) {
-            console.warn('Could not fetch credits records from program:', e);
+            } catch (e) {
+              console.warn(`requestRecords('${program}', true) failed:`, e);
+            }
           }
         }
 
-        // Build the inputs array for the predict function
-        // predict(pool_id: field, option: u64, amount: u64, random_number: u64, user_credit: credits)
-        const inputs = [
-          formattedPoolId,           // pool_id: field
-          `${option}u64`,            // option: u64 (1 or 2)
-          `${amountInMicrocredits}u64`, // amount: u64 (in microcredits)
-          `${randomNumber}u64`,      // random_number: u64
+        // --- Step 2: Build inputs ---
+        const inputs: string[] = [
+          formattedPoolId,
+          `${option}u64`,
+          `${amountInMicrocredits}u64`,
+          `${randomNumber}u64`,
         ];
 
-        // If we have a credits record, add it; otherwise the transaction will fail
-        // The wallet may prompt the user to select a record
         if (creditsRecord) {
           inputs.push(creditsRecord);
+          console.log('Including credits record in inputs');
+        } else {
+          console.warn('No credits record found — sending without it, wallet may auto-fill');
         }
 
-        // Create the transaction
-        const aleoTransaction = Transaction.createTransaction(
-          publicKey,
-          WalletAdapterNetwork.TestnetBeta,
-          PROGRAM_ID,
-          'predict',
-          inputs,
-          100_000 // Fee in microcredits (0.1 Aleo)
-        );
+        // --- Step 3: Build and send transaction ---
+        console.log('=== TRANSACTION ===');
+        console.log('Inputs:', JSON.stringify(inputs, null, 2));
 
-        // Request the transaction from the wallet
-        const result = await requestTransaction(aleoTransaction);
+        const result = await executeTransaction({
+          program: PROGRAM_ID,
+          function: 'predict',
+          inputs: inputs,
+          fee: 100_000,
+          privateFee: true,
+        });
 
-        setTransactionId(result || null);
+        const txId = typeof result === 'string' ? result : result?.transactionId;
+        setTransactionId(txId || null);
         setIsLoading(false);
 
         return {
-          transactionId: result,
+          transactionId: txId,
           status: 'success',
         };
       } catch (e) {
+        console.error('Prediction error:', e);
         const errorMessage = e instanceof Error ? e.message : 'Transaction failed';
         setError(errorMessage);
         setIsLoading(false);
@@ -153,7 +182,7 @@ export function usePrediction() {
         };
       }
     },
-    [publicKey, requestTransaction, requestRecords]
+    [address, executeTransaction, requestRecords]
   );
 
   return {
@@ -161,7 +190,7 @@ export function usePrediction() {
     isLoading,
     error,
     transactionId,
-    isConnected: !!publicKey,
-    publicKey,
+    isConnected: !!address,
+    address,
   };
 }

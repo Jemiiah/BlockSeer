@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react';
+import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
 // Program ID
 const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
@@ -115,14 +115,14 @@ function toUserPrediction(record: PredictionRecord, index: number): UserPredicti
 }
 
 export function useUserPredictions() {
-  const { connected, publicKey, requestRecordPlaintexts } = useWallet();
+  const { connected, address, requestRecords } = useWallet();
   const [predictions, setPredictions] = useState<UserPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   const fetchPredictions = useCallback(async () => {
-    if (!connected || !publicKey || !requestRecordPlaintexts) {
+    if (!connected || !address || !requestRecords) {
       setPredictions([]);
       return;
     }
@@ -132,7 +132,7 @@ export function useUserPredictions() {
 
     try {
       // Request decrypted records from the wallet
-      const records = await requestRecordPlaintexts(PROGRAM_ID);
+      const records = await requestRecords(PROGRAM_ID, true);
 
       if (!records || !Array.isArray(records)) {
         setPredictions([]);
@@ -144,15 +144,15 @@ export function useUserPredictions() {
       const parsedPredictions: UserPrediction[] = [];
 
       for (let i = 0; i < records.length; i++) {
-        const record = records[i];
+        const record = records[i] as Record<string, unknown>;
 
         // Check if this is a Prediction record (by recordName or structure)
-        const recordName = record.recordName || record.name || '';
+        const recordName = (record.recordName || record.name || '') as string;
         if (recordName && !recordName.includes('Prediction')) {
           continue;
         }
 
-        const parsed = parseRecordPlaintext(record);
+        const parsed = parseRecordPlaintext(record as Record<string, unknown>);
         if (parsed) {
           parsedPredictions.push(toUserPrediction(parsed, i));
         }
@@ -168,14 +168,14 @@ export function useUserPredictions() {
     } finally {
       setIsLoading(false);
     }
-  }, [connected, publicKey, requestRecordPlaintexts]);
+  }, [connected, address, requestRecords]);
 
   // Fetch predictions when wallet connects
   useEffect(() => {
-    if (connected && publicKey && !hasAttemptedFetch) {
+    if (connected && address && !hasAttemptedFetch) {
       fetchPredictions();
     }
-  }, [connected, publicKey, hasAttemptedFetch, fetchPredictions]);
+  }, [connected, address, hasAttemptedFetch, fetchPredictions]);
 
   // Reset when wallet disconnects
   useEffect(() => {

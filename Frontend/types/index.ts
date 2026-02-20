@@ -44,4 +44,13 @@ export interface OrderSummary {
   shares: string;
   avgPrice: number;
   potentialReturn: string;
+  odds: string;
+  profit: string;
+}
+
+export interface OddsInfo {
+  yesPrice: number;
+  noPrice: number;
+  yesOdds: number;
+  noOdds: number;
 }

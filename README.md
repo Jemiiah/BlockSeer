@@ -1,105 +1,71 @@
 # Manifold
 
-## Project Structure
+Privacy-first prediction markets on Aleo, powered by zero-knowledge proofs.
+
+## Architecture
 
 ```
-Frontend/
-├── app/                          # Next.js App Router
-│   ├── globals.css               # Global styles & Tailwind
-│   ├── layout.tsx                # Root layout with providers
-│   └── page.tsx                  # Main page component
-│
-├── components/                   # React components
-│   ├── ui/                       # Reusable UI primitives
-│   │   ├── button.tsx
-│   │   ├── badge.tsx
-│   │   ├── charts.tsx
-│   │   └── index.ts
-│   ├── market/                   # Market-specific components
-│   │   ├── market-card.tsx
-│   │   ├── market-filters.tsx
-│   │   ├── featured-market.tsx
-│   │   ├── trading-panel.tsx
-│   │   ├── activity-feed.tsx
-│   │   ├── event-detail.tsx
-│   │   └── index.ts
-│   ├── navbar.tsx
-│   ├── footer-stats.tsx
-│   └── providers.tsx             # Wagmi & React Query providers
-│
-├── hooks/                        # Custom React hooks
-│   ├── use-markets.ts
-│   ├── use-wallet.ts
-│   └── index.ts
-│
-├── lib/                          # Utilities & data
-│   ├── utils.ts                  # Helper functions
-│   └── data.ts                   # Mock market data
-│
-├── types/                        # TypeScript definitions
-│   └── index.ts
-│
-├── public/                       # Static assets
-│
-├── .gitignore
-├── components.json               # shadcn/ui config
-├── next.config.js
-├── package.json
-├── postcss.config.mjs
-├── tailwind.config.ts
-├── tsconfig.json
-└── wagmi.config.ts               # Wallet configuration
+Manifold/
+├── Frontend/       # Next.js 14 web app
+├── Oracle/         # Off-chain oracle for market resolution
+└── prediction/     # Leo smart contract (deployed on Aleo testnet)
 ```
 
-## Tech Stack
+## Smart Contract
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Wallet**: Wagmi v2 + Viem
-- **State**: React Query + React Hooks
-- **Icons**: Lucide React
+**Program ID:** `predictionprivacyhackviii.aleo`
+
+A pari-mutuel prediction market where users stake ALEO credits on binary outcomes. Predictions are private records; pool state is public.
+
+Key functions:
+- `create_pool` — Admin creates a market with title, options, and deadline
+- `predict` — Users stake on option A or B (private record)
+- `lock_pool` / `resolve_pool` — Admin closes and resolves markets
+- `collect_winnings` — Winners claim proportional payouts
+
+See [`prediction/readme.md`](prediction/readme.md) for full contract documentation.
+
+## Frontend
+
+Next.js 14 app with Aleo wallet integration via `@provablehq/aleo-wallet-adaptor-*`.
+
+**Supported Wallets:**
+- Shield (Galileo) — via `ShieldWalletAdapter`
+- Leo Wallet — via `LeoWalletAdapter`
+- Puzzle Wallet — via `PuzzleWalletAdapter`
+
+**Key Features:**
+- Market grid with filtering and search
+- On-chain pool data with pari-mutuel odds
+- Trading panel with `executeTransaction` for predictions
+- Portfolio view with private record fetching
+- Admin panel for market creation (wallet-gated)
+- Responsive dark theme
+
+See [`Frontend/README.md`](Frontend/README.md) for setup instructions.
+
+## Oracle
+
+Off-chain service that fetches real-world data (ETH price, BTC dominance, gas prices, etc.) and provides resolution data for prediction markets.
 
 ## Getting Started
 
 ```bash
-# Install dependencies
-bun install
-# or
+# Frontend
+cd Frontend
 npm install
-
-# Run development server
-bun dev
-# or
 npm run dev
 
-# Build for production
-bun run build
-# or
-npm run build
+# Oracle
+cd Oracle
+npm install
+npm start
 ```
 
-## Features
+## Tech Stack
 
-- **Market Grid** - Filterable cards for all prediction markets
-- **Event Detail Page** - Full market info with price history, trading panel, activity feed
-- **Wallet Integration** - Ready for Aleo wallet connection via Wagmi
-- **Responsive Design** - Mobile, tablet, and desktop support
-- **Dark Theme** - Zinc color palette with blue accents
-
-## Environment Variables
-
-Create a `.env.local` file:
-
-```env
-NEXT_PUBLIC_WC_PROJECT_ID=your_walletconnect_project_id
-```
-
-## Integration Points
-
-The frontend is prepared for Aleo blockchain integration:
-
-1. **Wallet Connection** - Update `wagmi.config.ts` with Aleo chain details
-2. **Trading Panel** - Connect to smart contract for order submission
-3. **Activity Feed** - Subscribe to on-chain events
-4. **Market Data** - Replace mock data in `lib/data.ts` with contract calls
+- **Smart Contract:** Leo (Aleo)
+- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
+- **Wallet:** @provablehq/aleo-wallet-adaptor-* (v0.3.0-alpha)
+- **State:** React Query
+- **Network:** Aleo Testnet

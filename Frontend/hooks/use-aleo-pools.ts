@@ -1,35 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Market, MarketCategory } from '@/types';
-import { fetchAllMarkets, fetchPendingMarkets, fetchLockedMarkets, ApiMarket } from '@/lib/api-client';
+import { fetchAllMarkets, ApiMarket } from '@/lib/api-client';
+import { getPool, AleoPool } from '@/lib/aleo-client';
+import { calculateOdds } from '@/lib/utils';
 
-// Convert API market to Market type
-function apiMarketToMarket(market: ApiMarket): Market {
-  // Parse stakes from string to number
-  const optionAStakes = parseInt(market.option_a_stakes || '0', 10);
-  const optionBStakes = parseInt(market.option_b_stakes || '0', 10);
-  const totalStakes = optionAStakes + optionBStakes;
+// Convert API market to Market type, optionally enriched with on-chain data
+function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market {
+  // Use on-chain stakes if available, otherwise fall back to API data
+  const optionAStakes = onChain ? onChain.option_a_stakes : parseInt(market.option_a_stakes || '0', 10);
+  const optionBStakes = onChain ? onChain.option_b_stakes : parseInt(market.option_b_stakes || '0', 10);
 
-  let yesPrice = 50;
-  let noPrice = 50;
+  const { yesPrice, noPrice } = calculateOdds(optionAStakes, optionBStakes);
 
-  if (totalStakes > 0) {
-    yesPrice = Math.round((optionAStakes / totalStakes) * 100);
-    noPrice = 100 - yesPrice;
-  }
+  // Trader count from on-chain if available
+  const traders = onChain ? onChain.total_no_of_stakes : 0;
 
   // Determine status based on API status
-  // pending = open for betting = 'live'
-  // locked = betting closed, awaiting resolution = 'upcoming' (resolving soon)
-  // resolved = market is done = 'resolved'
   let status: 'live' | 'upcoming' | 'resolved' = 'live';
   if (market.status === 'pending') {
-    status = 'live'; // Active and accepting predictions
+    status = 'live';
   } else if (market.status === 'locked') {
-    status = 'upcoming'; // Locked means waiting for resolution (not accepting bets)
+    status = 'upcoming';
   } else if (market.status === 'resolved') {
-    status = 'resolved'; // Market has been resolved
+    status = 'resolved';
   }
 
   // Convert deadline to readable date (deadline is Unix timestamp as string)
@@ -41,14 +36,13 @@ function apiMarketToMarket(market: ApiMarket): Market {
     year: 'numeric',
   });
 
-  // Convert total staked to volume string (microcredits to Aleo)
-  const totalStaked = parseInt(market.total_staked || '0', 10);
+  // Use on-chain total_staked if available, otherwise API value
+  const totalStaked = onChain ? onChain.total_staked : parseInt(market.total_staked || '0', 10);
   const volumeInAleo = totalStaked / 1_000_000;
   const volume = volumeInAleo >= 1000
     ? `${(volumeInAleo / 1000).toFixed(1)}K ALEO`
     : `${volumeInAleo.toFixed(2)} ALEO`;
 
-  // Create subtitle from option labels
   const subtitle = `${market.option_a_label} vs ${market.option_b_label}`;
 
   return {
@@ -58,7 +52,7 @@ function apiMarketToMarket(market: ApiMarket): Market {
     category: 'DeFi' as MarketCategory,
     endDate,
     volume,
-    traders: 0,
+    traders,
     yesPrice,
     noPrice,
     change: 0,
@@ -70,54 +64,34 @@ function apiMarketToMarket(market: ApiMarket): Market {
 }
 
 export function useAleoPools() {
-  const [pools, setPools] = useState<Market[]>([]);
-  const [pendingPools, setPendingPools] = useState<Market[]>([]);
-  const [lockedPools, setLockedPools] = useState<Market[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: pools = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['markets'],
+    queryFn: async () => {
+      const allMarkets = await fetchAllMarkets();
 
-  const fetchPools = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+      // Try to enrich each market with on-chain data
+      const enriched = await Promise.all(
+        allMarkets.map(async (market) => {
+          try {
+            const onChainPool = await getPool(market.market_id);
+            return apiMarketToMarket(market, onChainPool);
+          } catch {
+            // Fall back to API-only data if on-chain fetch fails
+            return apiMarketToMarket(market);
+          }
+        })
+      );
 
-    try {
-      const [allMarkets, pending, locked] = await Promise.all([
-        fetchAllMarkets(),
-        fetchPendingMarkets(),
-        fetchLockedMarkets(),
-      ]);
-
-      // Convert API markets to Market type
-      const allPools = allMarkets.map(apiMarketToMarket);
-      const pendingMarkets = pending.map(apiMarketToMarket);
-      const lockedMarkets = locked.map(apiMarketToMarket);
-
-      setPools(allPools);
-      setPendingPools(pendingMarkets);
-      setLockedPools(lockedMarkets);
-    } catch (err) {
-      console.error('Error fetching markets:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch markets');
-      setPools([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPools();
-  }, [fetchPools]);
-
-  const refetch = useCallback(() => {
-    fetchPools();
-  }, [fetchPools]);
+      return enriched;
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   return {
     pools,
-    pendingPools,
-    lockedPools,
     isLoading,
-    error,
+    error: error ? (error instanceof Error ? error.message : 'Failed to fetch markets') : null,
     refetch,
   };
 }

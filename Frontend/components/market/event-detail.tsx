@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui';
 import { TradingPanel } from './trading-panel';
 import { ActivityFeed } from './activity-feed';
 import { formatNumber } from '@/lib/utils';
+import { useOnChainPool } from '@/hooks/use-on-chain-pool';
 
 interface EventDetailProps {
   market: Market;
@@ -15,13 +16,20 @@ interface EventDetailProps {
 
 export function EventDetail({ market, activities, onBack }: EventDetailProps) {
   const isPositive = market.change >= 0;
+  const { pool: onChainPool } = useOnChainPool(market.id);
+
+  // Use on-chain data when available, fall back to market props
+  const traderCount = onChainPool ? onChainPool.total_no_of_stakes : market.traders;
+  const volume = onChainPool
+    ? `${(onChainPool.total_staked / 1_000_000).toFixed(2)} ALEO`
+    : market.volume;
 
   return (
     <div className="animate-fade-in">
       {/* Back Button */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-zinc-400 hover:text-white mb-8 transition-colors group"
+        className="flex items-center gap-2 text-[hsl(230,10%,50%)] hover:text-white mb-8 transition-colors group"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">Back to Markets</span>
@@ -31,7 +39,10 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header Card */}
-          <div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6">
+          <div className="relative bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6 overflow-hidden">
+            {/* Subtle gradient accent */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+
             <div className="flex items-start justify-between mb-4">
               <Badge>{market.category}</Badge>
               <div className="flex items-center gap-4">
@@ -49,20 +60,20 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
             </div>
 
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">{market.title}</h1>
-            <p className="text-zinc-400 text-lg mb-6">{market.subtitle}</p>
+            <p className="text-[hsl(230,10%,50%)] text-lg mb-6">{market.subtitle}</p>
 
             <div className="flex flex-wrap gap-6 text-sm">
-              <span className="flex items-center gap-2 text-zinc-400">
+              <span className="flex items-center gap-2 text-[hsl(230,10%,45%)]">
                 <Clock className="w-4 h-4" />
                 Ends {market.endDate}
               </span>
-              <span className="flex items-center gap-2 text-zinc-400">
+              <span className="flex items-center gap-2 text-[hsl(230,10%,45%)]">
                 <Users className="w-4 h-4" />
-                {formatNumber(market.traders)} traders
+                {formatNumber(traderCount)} traders
               </span>
-              <span className="flex items-center gap-2 text-zinc-400">
+              <span className="flex items-center gap-2 text-[hsl(230,10%,45%)]">
                 <BarChart3 className="w-4 h-4" />
-                {market.volume} volume
+                {volume} volume
               </span>
             </div>
           </div>
@@ -85,15 +96,15 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
 
 function AboutSection({ description, resolution }: { description: string; resolution: string }) {
   return (
-    <div className="bg-zinc-900/80 border border-zinc-800/60 rounded-2xl p-6">
+    <div className="bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
       <h2 className="text-lg font-semibold text-white mb-4">About this Market</h2>
-      <p className="text-zinc-400 leading-relaxed mb-6">{description}</p>
+      <p className="text-[hsl(230,10%,50%)] leading-relaxed mb-6">{description}</p>
 
       <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-        <span className="w-1 h-4 bg-blue-500 rounded-full" />
+        <span className="w-1 h-4 bg-gradient-to-b from-blue-500 to-violet-500 rounded-full" />
         Resolution Criteria
       </h3>
-      <p className="text-zinc-500 text-sm leading-relaxed">{resolution}</p>
+      <p className="text-[hsl(230,10%,40%)] text-sm leading-relaxed">{resolution}</p>
     </div>
   );
 }

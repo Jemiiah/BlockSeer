@@ -37,178 +37,15 @@ interface PortfolioProps {
   isConnected?: boolean;
 }
 
-// Mock data for active positions (linked to actual markets)
-const mockActivePositions: Position[] = [
-  {
-    id: '1',
-    marketId: '3',
-    market: 'Bitcoin $150K',
-    outcome: 'Yes',
-    shares: 150,
-    avgPrice: 0.65,
-    currentPrice: 0.72,
-    value: 108.0,
-    pl: 10.5,
-    plPercent: 10.77,
-    status: 'active',
-  },
-  {
-    id: '2',
-    marketId: '1',
-    market: 'Ethereum ETF Approval',
-    outcome: 'No',
-    shares: 200,
-    avgPrice: 0.45,
-    currentPrice: 0.38,
-    value: 76.0,
-    pl: 14.0,
-    plPercent: 22.58,
-    status: 'active',
-  },
-  {
-    id: '3',
-    marketId: '2',
-    market: 'Aleo Mainnet TVL',
-    outcome: 'Yes',
-    shares: 500,
-    avgPrice: 0.82,
-    currentPrice: 0.79,
-    value: 395.0,
-    pl: -15.0,
-    plPercent: -3.66,
-    status: 'active',
-  },
-  {
-    id: '4',
-    marketId: '4',
-    market: 'Solana Outage',
-    outcome: 'No',
-    shares: 100,
-    avgPrice: 0.25,
-    currentPrice: 0.22,
-    value: 22.0,
-    pl: 3.0,
-    plPercent: 13.64,
-    status: 'active',
-  },
-  {
-    id: '5',
-    marketId: '9',
-    market: 'Base Chain Dominance',
-    outcome: 'Yes',
-    shares: 300,
-    avgPrice: 0.55,
-    currentPrice: 0.61,
-    value: 183.0,
-    pl: 18.0,
-    plPercent: 10.91,
-    status: 'active',
-  },
-];
-
-// Mock data for closed positions (linked to actual markets)
-const mockClosedPositions: Position[] = [
-  {
-    id: '6',
-    marketId: '5',
-    market: 'zkSync Token Launch',
-    outcome: 'Yes',
-    shares: 1000,
-    avgPrice: 0.52,
-    currentPrice: 1.0,
-    value: 1000.0,
-    pl: 480.0,
-    plPercent: 92.31,
-    status: 'closed',
-    result: 'won',
-    closedAt: '2024-11-06',
-  },
-  {
-    id: '7',
-    marketId: '6',
-    market: 'Uniswap v4 Launch',
-    outcome: 'Yes',
-    shares: 250,
-    avgPrice: 0.78,
-    currentPrice: 1.0,
-    value: 250.0,
-    pl: 55.0,
-    plPercent: 28.21,
-    status: 'closed',
-    result: 'won',
-    closedAt: '2025-01-01',
-  },
-  {
-    id: '8',
-    marketId: '7',
-    market: 'Aleo ZK Proving',
-    outcome: 'Yes',
-    shares: 400,
-    avgPrice: 0.35,
-    currentPrice: 0.0,
-    value: 0.0,
-    pl: -140.0,
-    plPercent: -100.0,
-    status: 'closed',
-    result: 'lost',
-    closedAt: '2024-12-31',
-  },
-  {
-    id: '9',
-    marketId: '1',
-    market: 'Ethereum ETF Approval',
-    outcome: 'No',
-    shares: 600,
-    avgPrice: 0.42,
-    currentPrice: 0.0,
-    value: 0.0,
-    pl: -252.0,
-    plPercent: -100.0,
-    status: 'closed',
-    result: 'lost',
-    closedAt: '2024-05-23',
-  },
-  {
-    id: '10',
-    marketId: '8',
-    market: 'ETH Staking Rate',
-    outcome: 'No',
-    shares: 180,
-    avgPrice: 0.68,
-    currentPrice: 1.0,
-    value: 180.0,
-    pl: 57.6,
-    plPercent: 47.06,
-    status: 'closed',
-    result: 'won',
-    closedAt: '2024-12-31',
-  },
-  {
-    id: '11',
-    marketId: '9',
-    market: 'Base Chain Dominance',
-    outcome: 'Yes',
-    shares: 320,
-    avgPrice: 0.71,
-    currentPrice: 1.0,
-    value: 320.0,
-    pl: 92.8,
-    plPercent: 40.88,
-    status: 'closed',
-    result: 'won',
-    closedAt: '2024-11-15',
-  },
-];
-
-const defaultStats: PortfolioStats = {
-  totalValue: 784.0,
-  netPL: 324.9,
-  netPLPercent: 41.4,
-  totalVolume: 4722.55,
-  biggestWin: 480.0,
-  totalTrades: 11,
-  activePositions: 5,
-  closedPositions: 6,
+const emptyStats: PortfolioStats = {
+  totalValue: 0,
+  netPL: 0,
+  netPLPercent: 0,
+  totalVolume: 0,
+  biggestWin: 0,
+  totalTrades: 0,
+  activePositions: 0,
+  closedPositions: 0,
 };
 
 type TabType = 'active' | 'closed';
@@ -231,6 +68,15 @@ function predictionsToPositions(predictions: ReturnType<typeof useUserPrediction
   }));
 }
 
+const statCardStyles = [
+  { icon: Wallet, iconColor: 'text-blue-400', bg: 'bg-blue-500/[0.04]' },
+  { icon: TrendingUp, iconColor: 'text-emerald-400', bg: 'bg-emerald-500/[0.04]' },
+  { icon: Trophy, iconColor: 'text-yellow-400', bg: 'bg-yellow-500/[0.04]' },
+  { icon: DollarSign, iconColor: 'text-violet-400', bg: 'bg-violet-500/[0.04]' },
+  { icon: Hash, iconColor: 'text-blue-400', bg: 'bg-blue-500/[0.04]' },
+  { icon: BarChart3, iconColor: 'text-blue-400', bg: 'bg-blue-500/[0.04]' },
+];
+
 export function Portfolio({ isConnected = false }: PortfolioProps) {
   const [activeTab, setActiveTab] = useState<TabType>('active');
   const [searchQuery, setSearchQuery] = useState('');
@@ -243,34 +89,26 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
     refetch: refetchPredictions,
   } = useUserPredictions();
 
-  // Convert predictions to positions, or use mock data as fallback
+  // Convert predictions to positions
   const realPositions = useMemo(() => predictionsToPositions(userPredictions), [userPredictions]);
 
-  // Use real positions if available, otherwise use mock data
-  const activePositions = hasPredictions
-    ? realPositions.filter((p) => p.status === 'active')
-    : mockActivePositions;
+  const activePositions = realPositions.filter((p) => p.status === 'active');
+  const closedPositions = realPositions.filter((p) => p.status === 'closed');
 
-  const closedPositions = hasPredictions
-    ? realPositions.filter((p) => p.status === 'closed')
-    : mockClosedPositions;
-
-  // Calculate stats from real data or use defaults
+  // Calculate stats from real data
   const stats = useMemo(() => {
-    if (hasPredictions) {
-      const totalValue = realPositions.reduce((sum, p) => sum + p.value, 0);
-      return {
-        totalValue,
-        netPL: 0,
-        netPLPercent: 0,
-        totalVolume: totalValue,
-        biggestWin: 0,
-        totalTrades: realPositions.length,
-        activePositions: activePositions.length,
-        closedPositions: closedPositions.length,
-      };
-    }
-    return defaultStats;
+    if (!hasPredictions) return emptyStats;
+    const totalValue = realPositions.reduce((sum, p) => sum + p.value, 0);
+    return {
+      totalValue,
+      netPL: 0,
+      netPLPercent: 0,
+      totalVolume: totalValue,
+      biggestWin: 0,
+      totalTrades: realPositions.length,
+      activePositions: activePositions.length,
+      closedPositions: closedPositions.length,
+    };
   }, [hasPredictions, realPositions, activePositions.length, closedPositions.length]);
 
   const filteredPositions = useMemo(() => {
@@ -288,6 +126,27 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
     );
   }, [activeTab, searchQuery, activePositions, closedPositions]);
 
+  const statCards = [
+    { label: 'Portfolio Value', value: `$${stats.totalValue.toFixed(2)}`, valueClass: 'text-white' },
+    {
+      label: 'Net P&L',
+      value: `${stats.netPL >= 0 ? '+' : ''}$${stats.netPL.toFixed(2)}`,
+      valueClass: stats.netPL >= 0 ? 'text-emerald-400' : 'text-red-400',
+      sub: `(${stats.netPLPercent >= 0 ? '+' : ''}${stats.netPLPercent.toFixed(1)}%)`,
+      subClass: stats.netPL >= 0 ? 'text-emerald-400/70' : 'text-red-400/70',
+    },
+    { label: 'Biggest Win', value: `+$${stats.biggestWin.toFixed(2)}`, valueClass: 'text-yellow-400' },
+    { label: 'Volume Traded', value: `$${stats.totalVolume.toFixed(2)}`, valueClass: 'text-white' },
+    { label: 'Total Trades', value: `${stats.totalTrades}`, valueClass: 'text-white' },
+    {
+      label: 'Positions',
+      value: `${stats.activePositions}`,
+      valueClass: 'text-white',
+      sub: 'active',
+      subClass: 'text-[hsl(230,10%,40%)]',
+    },
+  ];
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
@@ -296,12 +155,12 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
             Portfolio
           </h1>
-          <p className="text-zinc-400 text-lg">
+          <p className="text-[hsl(230,10%,50%)] text-lg">
             Track your predictions and performance across all markets.
           </p>
-          {!hasPredictions && isConnected && (
-            <p className="text-amber-400/70 text-sm mt-2">
-              Showing sample data. Sync wallet to see your predictions.
+          {!hasPredictions && isConnected && !isLoadingPredictions && (
+            <p className="text-[hsl(230,10%,35%)] text-sm mt-2">
+              Sync your wallet to load your predictions.
             </p>
           )}
         </div>
@@ -311,7 +170,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
           <button
             onClick={() => refetchPredictions()}
             disabled={isLoadingPredictions}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
           >
             {isLoadingPredictions ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -325,106 +184,50 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        {/* Portfolio Value */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="w-4 h-4 text-blue-400" />
-            <span className="text-xs font-medium text-zinc-500">Portfolio Value</span>
-          </div>
-          <div className="text-xl font-bold text-white font-mono">
-            ${stats.totalValue.toFixed(2)}
-          </div>
-        </div>
+        {statCards.map((card, i) => {
+          const style = statCardStyles[i];
+          const IconComponent = i === 1 ? (stats.netPL >= 0 ? TrendingUp : TrendingDown) : style.icon;
+          const iconColor = i === 1 ? (stats.netPL >= 0 ? 'text-emerald-400' : 'text-red-400') : style.iconColor;
 
-        {/* Net P&L */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            {stats.netPL >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-400" />
-            )}
-            <span className="text-xs font-medium text-zinc-500">Net P&L</span>
-          </div>
-          <div className={cn(
-            "text-xl font-bold font-mono",
-            stats.netPL >= 0 ? "text-emerald-400" : "text-red-400"
-          )}>
-            {stats.netPL >= 0 ? '+' : ''}${stats.netPL.toFixed(2)}
-          </div>
-          <span className={cn(
-            "text-xs",
-            stats.netPL >= 0 ? "text-emerald-400/70" : "text-red-400/70"
-          )}>
-            ({stats.netPLPercent >= 0 ? '+' : ''}{stats.netPLPercent.toFixed(1)}%)
-          </span>
-        </div>
-
-        {/* Biggest Win */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-yellow-400" />
-            <span className="text-xs font-medium text-zinc-500">Biggest Win</span>
-          </div>
-          <div className="text-xl font-bold text-yellow-400 font-mono">
-            +${stats.biggestWin.toFixed(2)}
-          </div>
-        </div>
-
-        {/* Total Volume */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-purple-400" />
-            <span className="text-xs font-medium text-zinc-500">Volume Traded</span>
-          </div>
-          <div className="text-xl font-bold text-white font-mono">
-            ${stats.totalVolume.toFixed(2)}
-          </div>
-        </div>
-
-        {/* Total Trades */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Hash className="w-4 h-4 text-zinc-400" />
-            <span className="text-xs font-medium text-zinc-500">Total Trades</span>
-          </div>
-          <div className="text-xl font-bold text-white font-mono">
-            {stats.totalTrades}
-          </div>
-        </div>
-
-        {/* Positions Count */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-blue-400" />
-            <span className="text-xs font-medium text-zinc-500">Positions</span>
-          </div>
-          <div className="text-xl font-bold text-white font-mono">
-            {stats.activePositions} <span className="text-sm text-zinc-500">active</span>
-          </div>
-        </div>
+          return (
+            <div key={card.label} className={cn('border border-white/[0.06] rounded-xl p-4', style.bg)}>
+              <div className="flex items-center gap-2 mb-2">
+                <IconComponent className={cn('w-4 h-4', iconColor)} />
+                <span className="text-xs font-medium text-[hsl(230,10%,40%)]">{card.label}</span>
+              </div>
+              <div className={cn('text-xl font-bold font-mono', card.valueClass)}>
+                {card.value}
+              </div>
+              {card.sub && (
+                <span className={cn('text-xs', card.subClass)}>
+                  {card.sub}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Positions Section */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden">
+      <div className="bg-[hsl(230,15%,8%)]/60 border border-white/[0.06] rounded-2xl overflow-hidden">
         {/* Tabs and Search */}
-        <div className="px-6 py-4 border-b border-zinc-800/60">
+        <div className="px-6 py-4 border-b border-white/[0.06]">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             {/* Tabs */}
-            <div className="flex items-center gap-1 bg-zinc-800/50 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-white/[0.04] rounded-lg p-1">
               <button
                 onClick={() => setActiveTab('active')}
                 className={cn(
                   'px-4 py-2 rounded-md text-sm font-medium transition-all',
                   activeTab === 'active'
-                    ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-white/[0.08] text-white'
+                    : 'text-[hsl(230,10%,45%)] hover:text-white'
                 )}
               >
                 Active
                 <span className={cn(
                   'ml-2 px-1.5 py-0.5 rounded text-xs',
-                  activeTab === 'active' ? 'bg-blue-500/20 text-blue-400' : 'bg-zinc-700 text-zinc-500'
+                  activeTab === 'active' ? 'bg-blue-500/20 text-blue-400' : 'bg-white/[0.06] text-[hsl(230,10%,40%)]'
                 )}>
                   {stats.activePositions}
                 </span>
@@ -434,14 +237,14 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                 className={cn(
                   'px-4 py-2 rounded-md text-sm font-medium transition-all',
                   activeTab === 'closed'
-                    ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-white/[0.08] text-white'
+                    : 'text-[hsl(230,10%,45%)] hover:text-white'
                 )}
               >
                 Closed
                 <span className={cn(
                   'ml-2 px-1.5 py-0.5 rounded text-xs',
-                  activeTab === 'closed' ? 'bg-zinc-600 text-zinc-300' : 'bg-zinc-700 text-zinc-500'
+                  activeTab === 'closed' ? 'bg-white/[0.08] text-white/70' : 'bg-white/[0.06] text-[hsl(230,10%,40%)]'
                 )}>
                   {stats.closedPositions}
                 </span>
@@ -450,18 +253,18 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
 
             {/* Search */}
             <div className="relative w-full sm:w-72 sm:mx-auto">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(230,10%,40%)]" />
               <input
                 type="text"
                 placeholder="Search positions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg pl-10 pr-10 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 transition-all"
+                className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg pl-10 pr-10 py-2 text-sm text-white placeholder:text-[hsl(230,10%,40%)] focus:outline-none focus:border-white/[0.12] transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(230,10%,40%)] hover:text-white/70"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -473,29 +276,55 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
         {/* Positions Table */}
         {!isConnected ? (
           <div className="px-6 py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
-              <Wallet className="w-8 h-8 text-zinc-500" />
+            <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-4">
+              <Wallet className="w-8 h-8 text-[hsl(230,10%,35%)]" />
             </div>
-            <p className="text-zinc-400 mb-2">Connect your wallet to view positions</p>
-            <p className="text-sm text-zinc-500">Your portfolio data will appear here</p>
+            <p className="text-[hsl(230,10%,50%)] mb-2">Connect your wallet to view positions</p>
+            <p className="text-sm text-[hsl(230,10%,35%)]">Your portfolio data will appear here</p>
           </div>
         ) : filteredPositions.length === 0 ? (
           <div className="px-6 py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-8 h-8 text-zinc-500" />
+            <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-4">
+              {!hasPredictions && !searchQuery ? (
+                <RefreshCw className="w-8 h-8 text-[hsl(230,10%,35%)]" />
+              ) : (
+                <BarChart3 className="w-8 h-8 text-[hsl(230,10%,35%)]" />
+              )}
             </div>
-            <p className="text-zinc-400 mb-2">
-              {searchQuery ? 'No positions match your search' : `No ${activeTab} positions`}
+            <p className="text-[hsl(230,10%,50%)] mb-2">
+              {searchQuery
+                ? 'No positions match your search'
+                : !hasPredictions
+                ? 'No predictions loaded yet'
+                : `No ${activeTab} positions`}
             </p>
-            <p className="text-sm text-zinc-500">
-              {searchQuery ? 'Try a different search term' : 'Start trading to see your positions here'}
+            <p className="text-sm text-[hsl(230,10%,35%)] mb-4">
+              {searchQuery
+                ? 'Try a different search term'
+                : !hasPredictions
+                ? 'Sync your wallet to load your on-chain predictions.'
+                : 'Start trading to see your positions here'}
             </p>
+            {!hasPredictions && !searchQuery && (
+              <button
+                onClick={() => refetchPredictions()}
+                disabled={isLoadingPredictions}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {isLoadingPredictions ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {isLoadingPredictions ? 'Syncing...' : 'Sync Wallet'}
+              </button>
+            )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scroll-hint">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-800/30">
+                <tr className="text-left text-xs font-medium text-[hsl(230,10%,40%)] uppercase tracking-wider bg-white/[0.02]">
                   <th className="px-6 py-3">Market</th>
                   <th className="px-6 py-3">Outcome</th>
                   <th className="px-6 py-3 text-right">Avg Price</th>
@@ -505,9 +334,9 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                   {activeTab === 'closed' && <th className="px-6 py-3 text-center">Result</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
+              <tbody className="divide-y divide-white/[0.04]">
                 {filteredPositions.map((position) => (
-                  <tr key={position.id} className="hover:bg-zinc-800/30 transition-colors group">
+                  <tr key={position.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4">
                       <Link
                         href={`/market/${position.marketId}`}
@@ -517,7 +346,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       </Link>
                       {activeTab === 'closed' && position.closedAt && (
-                        <div className="text-xs text-zinc-500 mt-1">
+                        <div className="text-xs text-[hsl(230,10%,35%)] mt-1">
                           Closed {position.closedAt}
                         </div>
                       )}
@@ -527,12 +356,12 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                         'px-2 py-1 rounded text-xs font-medium',
                         position.outcome === 'Yes'
                           ? 'bg-blue-500/10 text-blue-400'
-                          : 'bg-zinc-600/30 text-zinc-300'
+                          : 'bg-white/[0.06] text-white/70'
                       )}>
                         {position.outcome}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-zinc-400 text-right font-mono">
+                    <td className="px-6 py-4 text-sm text-[hsl(230,10%,50%)] text-right font-mono">
                       {(position.avgPrice * 100).toFixed(0)}¢
                     </td>
                     {activeTab === 'active' && (
@@ -562,7 +391,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                             ? 'bg-emerald-500/10 text-emerald-400'
                             : position.result === 'lost'
                             ? 'bg-red-500/10 text-red-400'
-                            : 'bg-zinc-600/30 text-zinc-400'
+                            : 'bg-white/[0.06] text-[hsl(230,10%,50%)]'
                         )}>
                           {position.result === 'won' ? 'Won' : position.result === 'lost' ? 'Lost' : 'Pending'}
                         </span>

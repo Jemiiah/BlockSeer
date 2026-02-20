@@ -16,8 +16,11 @@ export function MarketCard({ market }: MarketCardProps) {
   return (
     <Link
       href={`/market/${market.id}`}
-      className="group bg-zinc-900/80 border border-zinc-800/60 rounded-[24px] pt-6 px-6 pb-6 w-[301px] h-[252px] cursor-pointer transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-0.5 overflow-hidden flex flex-col"
+      className="group relative bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm border border-white/[0.06] rounded-[24px] pt-6 px-6 pb-6 w-full h-full min-h-[252px] cursor-pointer transition-all duration-300 hover:border-white/[0.1] hover:shadow-[0_0_30px_-5px_hsla(217,91%,60%,0.15),0_0_20px_-5px_hsla(263,70%,60%,0.1)] hover:-translate-y-1 overflow-hidden flex flex-col"
     >
+      {/* Gradient accent line at top (visible on hover) */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <Badge>{market.category}</Badge>
@@ -33,15 +36,15 @@ export function MarketCard({ market }: MarketCardProps) {
       <h3 className="text-white font-semibold text-base mb-1 group-hover:text-blue-400 transition-colors">
         {market.title}
       </h3>
-      <p className="text-zinc-500 text-sm mb-5">{market.subtitle}</p>
+      <p className="text-[hsl(230,10%,45%)] text-sm mb-5">{market.subtitle}</p>
 
       {/* Volume */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-zinc-800/60 px-2.5 py-1 rounded-lg">
-            <DollarSign className="w-3.5 h-3.5 text-zinc-400" />
+          <div className="flex items-center gap-1.5 bg-white/[0.04] px-2.5 py-1 rounded-lg">
+            <DollarSign className="w-3.5 h-3.5 text-[hsl(230,10%,45%)]" />
             <span className="text-sm font-semibold text-white">{market.volume}</span>
-            <span className="text-xs text-zinc-500">Vol</span>
+            <span className="text-xs text-[hsl(230,10%,45%)]">Vol</span>
           </div>
         </div>
         <span className={cn('text-xs font-medium flex items-center gap-0.5', isPositive ? 'text-emerald-400' : 'text-red-400')}>
@@ -56,14 +59,14 @@ export function MarketCard({ market }: MarketCardProps) {
           <div className="text-[10px] text-blue-400/70 mb-0.5">Yes</div>
           <div className="text-sm font-bold">{market.yesPrice}¢</div>
         </button>
-        <button className="bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 text-zinc-400 rounded-full py-2 px-3 transition-all duration-200">
-          <div className="text-[10px] text-zinc-500 mb-0.5">No</div>
+        <button className="bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/70 rounded-full py-2 px-3 transition-all duration-200">
+          <div className="text-[10px] text-white/40 mb-0.5">No</div>
           <div className="text-sm font-bold">{market.noPrice}¢</div>
         </button>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-zinc-500 pt-3 border-t border-zinc-800/60">
+      <div className="flex items-center justify-between text-xs text-[hsl(230,10%,40%)] pt-3 border-t border-white/[0.06]">
         <span className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5" />
           {market.endDate}
