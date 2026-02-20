@@ -9,6 +9,7 @@ import { Network } from '@provablehq/aleo-types';
 import { LeoWalletAdapter } from '@provablehq/aleo-wallet-adaptor-leo';
 import { PuzzleWalletAdapter } from '@provablehq/aleo-wallet-adaptor-puzzle';
 import { ShieldWalletAdapter } from '@provablehq/aleo-wallet-adaptor-shield';
+import { GalileoWalletAdapter } from '@provablehq/aleo-wallet-adaptor-prove-alpha';
 
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css';
 
@@ -27,6 +28,7 @@ const queryClient = new QueryClient({
 export function Providers({ children }: { children: React.ReactNode }) {
   const wallets = useMemo(
     () => [
+      new GalileoWalletAdapter(),
       new ShieldWalletAdapter(),
       new LeoWalletAdapter(),
       new PuzzleWalletAdapter(),

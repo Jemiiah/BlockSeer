@@ -97,9 +97,8 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
 function AboutSection({ description, resolution }: { description: string; resolution: string }) {
   return (
     <div className="bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6">
-      <h2 className="text-lg font-semibold text-white mb-4">About this Market</h2>
       <p className="text-[hsl(230,10%,50%)] leading-relaxed mb-6">{description}</p>
-
+      <h1>Wahala dey o</h1>
       <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
         <span className="w-1 h-4 bg-gradient-to-b from-blue-500 to-violet-500 rounded-full" />
         Resolution Criteria

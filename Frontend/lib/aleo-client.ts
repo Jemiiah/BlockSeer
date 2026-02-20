@@ -126,9 +126,14 @@ function parsePoolResponse(response: string): AleoPool | null {
 async function getMappingValue(mappingName: string, key: string): Promise<string | null> {
   try {
     const url = `${NETWORK_URL}/program/${PROGRAM_ID}/mapping/${mappingName}/${key}`;
+    console.log(`🔗 Fetching from blockchain: ${url}`);
     const response = await fetch(url);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.log(`❌ Mapping not found: ${mappingName}[${key}]`);
+      return null;
+    }
     const text = await response.text();
+    console.log(`✅ Raw blockchain response for ${mappingName}[${key}]:`, text);
     // The API returns JSON-encoded strings, strip surrounding quotes
     const value = text.replace(/^"|"$/g, '').trim();
     if (!value || value === 'null') return null;
@@ -191,15 +196,41 @@ export async function getAllPoolIds(): Promise<string[]> {
 // Get a single pool by ID
 export async function getPool(poolId: string): Promise<AleoPool | null> {
   try {
+    console.log(`\n📊 === FETCHING POOL DATA FROM BLOCKCHAIN ===`);
+    console.log('Pool ID:', poolId);
     const formattedId = poolId.endsWith('field') ? poolId : `${poolId}field`;
+    console.log('Formatted Pool ID:', formattedId);
 
     const result = await getMappingValue('pools', formattedId);
 
     if (!result || result === 'null') {
+      console.log('❌ Pool not found on blockchain');
       return null;
     }
 
-    return parsePoolResponse(result);
+    const parsedPool = parsePoolResponse(result);
+
+    if (parsedPool) {
+      console.log('\n✅ === PARSED POOL DATA ===');
+      console.log('Pool ID:', parsedPool.id);
+      console.log('Title:', parsedPool.title);
+      console.log('Description:', parsedPool.description);
+      console.log('Status:', parsedPool.status === 0 ? 'Open' : parsedPool.status === 1 ? 'Closed' : 'Resolved');
+      console.log('Deadline:', parsedPool.deadline);
+      console.log('Total Staked (microcredits):', parsedPool.total_staked);
+      console.log('Total Staked (ALEO):', (parsedPool.total_staked / 1_000_000).toFixed(6));
+      console.log('Option A Stakes (microcredits):', parsedPool.option_a_stakes);
+      console.log('Option A Stakes (ALEO):', (parsedPool.option_a_stakes / 1_000_000).toFixed(6));
+      console.log('Option B Stakes (microcredits):', parsedPool.option_b_stakes);
+      console.log('Option B Stakes (ALEO):', (parsedPool.option_b_stakes / 1_000_000).toFixed(6));
+      console.log('Total Number of Stakes:', parsedPool.total_no_of_stakes);
+      console.log('Option A Stake Count:', parsedPool.total_no_of_stakes_option_a);
+      console.log('Option B Stake Count:', parsedPool.total_no_of_stakes_option_b);
+      console.log('Winning Option:', parsedPool.winning_option === 0 ? 'Unresolved' : parsedPool.winning_option);
+      console.log('=================================\n');
+    }
+
+    return parsedPool;
   } catch (error) {
     console.error('Error fetching pool:', error);
     return null;
@@ -250,15 +281,21 @@ export async function poolExists(poolId: string): Promise<boolean> {
 // Get total predictions for a pool
 export async function getTotalPredictions(poolId: string): Promise<number | null> {
   try {
+    console.log('\n🔢 === FETCHING TOTAL PREDICTIONS ===');
     const formattedId = poolId.endsWith('field') ? poolId : `${poolId}field`;
 
     const result = await getMappingValue('total_predictions', formattedId);
 
     if (!result || result === 'null') {
+      console.log('❌ No predictions found for this pool');
       return null;
     }
 
-    return parseU64(result);
+    const totalPredictions = parseU64(result);
+    console.log('✅ Total Predictions:', totalPredictions);
+    console.log('====================================\n');
+
+    return totalPredictions;
   } catch (error) {
     console.error('Error fetching total predictions:', error);
     return null;

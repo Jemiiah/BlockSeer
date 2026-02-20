@@ -6,11 +6,12 @@ import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 // Program ID from the deployed Leo program
 const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
 
-// Native Aleo credits program
-const CREDITS_PROGRAM_ID = 'credits.aleo';
-
 // Default pool ID (will be made dynamic later)
 const DEFAULT_POOL_ID = '1field';
+
+// Transaction polling config
+const TX_POLL_INTERVAL = 3000; // 3 seconds
+const TX_POLL_MAX_ATTEMPTS = 40; // 2 minutes max
 
 interface PredictionParams {
   poolId?: string;
@@ -28,40 +29,48 @@ function generateRandomNumber(): number {
   return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 }
 
-/**
- * Try to extract microcredits balance from a record regardless of format.
- */
-function extractMicrocredits(record: any): bigint | null {
-  try {
-    const obj = typeof record === 'string' ? JSON.parse(record) : record;
-    const raw =
-      obj?.microcredits ??
-      obj?.data?.microcredits ??
-      obj?.plaintext?.microcredits;
-
-    if (raw == null) return null;
-
-    const str = String(raw)
-      .replace('u64.private', '')
-      .replace('u64.public', '')
-      .replace('u64', '')
-      .trim();
-
-    return BigInt(str);
-  } catch {
-    return null;
-  }
-}
-
 export function usePrediction() {
   const {
     address,
     executeTransaction,
-    requestRecords,
+    transactionStatus,
   } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+
+  /**
+   * Poll transactionStatus until accepted/failed or timeout.
+   */
+  const pollTransactionStatus = useCallback(
+    async (tempTxId: string): Promise<{ confirmed: boolean; onChainId?: string; error?: string }> => {
+      if (!transactionStatus) {
+        // Wallet doesn't support status polling — treat as optimistic success
+        return { confirmed: true };
+      }
+
+      for (let attempt = 0; attempt < TX_POLL_MAX_ATTEMPTS; attempt++) {
+        try {
+          const status = await transactionStatus(tempTxId);
+          console.log(`TX status poll #${attempt + 1}:`, status);
+
+          if (status.status === 'accepted') {
+            return { confirmed: true, onChainId: status.transactionId };
+          }
+          if (status.status === 'failed' || status.status === 'rejected') {
+            return { confirmed: false, error: status.error || `Transaction ${status.status} on-chain` };
+          }
+          // Still pending — wait and retry
+        } catch (e) {
+          console.warn('Status poll error:', e);
+        }
+        await new Promise((r) => setTimeout(r, TX_POLL_INTERVAL));
+      }
+      // Timed out — don't treat as error, tx may still be processing
+      return { confirmed: false };
+    },
+    [transactionStatus]
+  );
 
   const makePrediction = useCallback(
     async ({
@@ -93,48 +102,16 @@ export function usePrediction() {
         const formattedPoolId = poolId.endsWith('field') ? poolId : `${poolId}field`;
         const amountInMicrocredits = amount * 1_000_000;
 
-        // --- Step 1: Try to fetch credits records ---
         console.log('=== PREDICTION DEBUG ===');
         console.log('Address:', address);
         console.log('Amount (ALEO):', amount);
         console.log('Amount (microcredits):', amountInMicrocredits);
-        console.log('requestRecords available:', !!requestRecords);
-        console.log('executeTransaction available:', !!executeTransaction);
 
-        let creditsRecord: string | undefined;
-
-        if (requestRecords) {
-          const programsToTry = [CREDITS_PROGRAM_ID, PROGRAM_ID];
-
-          for (const program of programsToTry) {
-            if (creditsRecord) break;
-
-            try {
-              console.log(`Trying requestRecords('${program}', true)...`);
-              const records = await requestRecords(program, true);
-              console.log(`requestRecords('${program}', true) returned ${records?.length ?? 0} records`);
-
-              if (records && records.length > 0) {
-                console.log('First record raw type:', typeof records[0]);
-                console.log('First record raw value:', JSON.stringify(records[0]).slice(0, 500));
-
-                for (const record of records) {
-                  const balance = extractMicrocredits(record);
-                  console.log('Record balance:', balance?.toString());
-                  if (balance !== null && balance >= BigInt(amountInMicrocredits)) {
-                    creditsRecord = typeof record === 'string' ? record : JSON.stringify(record);
-                    console.log('Found suitable record with balance:', balance.toString());
-                    break;
-                  }
-                }
-              }
-            } catch (e) {
-              console.warn(`requestRecords('${program}', true) failed:`, e);
-            }
-          }
-        }
-
-        // --- Step 2: Build inputs ---
+        // Build inputs matching the Leo function signature:
+        //   predict(pool_id: field, option: u64, amount: u64, random_number: u64, user_credit: credits)
+        //
+        // We pass only the 4 non-record inputs. The wallet auto-resolves
+        // the 5th input (credits record) from the user's available records.
         const inputs: string[] = [
           formattedPoolId,
           `${option}u64`,
@@ -142,17 +119,12 @@ export function usePrediction() {
           `${randomNumber}u64`,
         ];
 
-        if (creditsRecord) {
-          inputs.push(creditsRecord);
-          console.log('Including credits record in inputs');
-        } else {
-          console.warn('No credits record found — sending without it, wallet may auto-fill');
-        }
-
-        // --- Step 3: Build and send transaction ---
         console.log('=== TRANSACTION ===');
-        console.log('Inputs:', JSON.stringify(inputs, null, 2));
+        console.log('Program:', PROGRAM_ID);
+        console.log('Function: predict');
+        console.log('Inputs:', inputs);
 
+        // Submit — the wallet handles record resolution and signing
         const result = await executeTransaction({
           program: PROGRAM_ID,
           function: 'predict',
@@ -161,12 +133,34 @@ export function usePrediction() {
           privateFee: true,
         });
 
-        const txId = typeof result === 'string' ? result : result?.transactionId;
-        setTransactionId(txId || null);
+        const tempTxId = typeof result === 'string' ? result : result?.transactionId;
+        console.log('Wallet returned temp TX ID:', tempTxId);
+
+        if (!tempTxId) {
+          throw new Error('Wallet did not return a transaction ID');
+        }
+
+        setTransactionId(tempTxId);
+
+        // Poll for on-chain confirmation
+        const txResult = await pollTransactionStatus(tempTxId);
+
+        if (txResult.error) {
+          setError(txResult.error);
+          setIsLoading(false);
+          return {
+            transactionId: txResult.onChainId || tempTxId,
+            status: 'error',
+            error: txResult.error,
+          };
+        }
+
+        const finalTxId = txResult.onChainId || tempTxId;
+        setTransactionId(finalTxId);
         setIsLoading(false);
 
         return {
-          transactionId: txId,
+          transactionId: finalTxId,
           status: 'success',
         };
       } catch (e) {
@@ -182,7 +176,7 @@ export function usePrediction() {
         };
       }
     },
-    [address, executeTransaction, requestRecords]
+    [address, executeTransaction, pollTransactionStatus]
   );
 
   return {

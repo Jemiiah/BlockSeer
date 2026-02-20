@@ -7,12 +7,22 @@ export function useOnChainPool(poolId: string | undefined) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['onChainPool', poolId],
     queryFn: async () => {
-      if (!poolId) return { pool: null, totalPredictions: 0 };
+      console.log('\n🚀 useOnChainPool: Starting blockchain data fetch...');
+      console.log('Pool ID requested:', poolId);
+
+      if (!poolId) {
+        console.log('⚠️ No pool ID provided, skipping fetch');
+        return { pool: null, totalPredictions: 0 };
+      }
 
       const [pool, predictions] = await Promise.all([
         getPool(poolId),
         getTotalPredictions(poolId),
       ]);
+
+      console.log('\n✅ useOnChainPool: Data fetch complete');
+      console.log('Pool data:', pool ? 'Found' : 'Not found');
+      console.log('Total predictions:', predictions ?? 0);
 
       return {
         pool,
