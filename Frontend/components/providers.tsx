@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new ShieldWalletAdapter(),
       new LeoWalletAdapter(),
       new PuzzleWalletAdapter(),
-    ] as any,
+    ],
     []
   );
 

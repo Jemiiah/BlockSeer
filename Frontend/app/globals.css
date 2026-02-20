@@ -19,6 +19,18 @@
     --border: 230 12% 14%;
     --ring: 217 91% 60%;
     --radius: 0.75rem;
+
+    /* Neon gradient stops */
+    --neon-1: #3b82f6;
+    --neon-2: #7c3aed;
+    --neon-3: #ec4899;
+    --neon-4: #22d3ee;
+
+    /* Glow intensities */
+    --glow-sm: 0 0 10px;
+    --glow-md: 0 0 20px;
+    --glow-lg: 0 0 40px;
+    --glow-xl: 0 0 60px;
   }
 }
 
@@ -46,6 +58,484 @@
 }
 .card-glow:hover {
   box-shadow: 0 0 30px -5px hsla(217, 91%, 60%, 0.15), 0 0 20px -5px hsla(263, 70%, 60%, 0.1);
+}
+
+/* ============================================
+   Holographic - Animated rainbow gradient
+   ============================================ */
+
+.holographic {
+  background: linear-gradient(
+    135deg,
+    #3b82f6 0%,
+    #7c3aed 20%,
+    #ec4899 40%,
+    #22d3ee 60%,
+    #a855f7 80%,
+    #3b82f6 100%
+  );
+  background-size: 300% 300%;
+  animation: holographic-shift 4s ease-in-out infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.holographic-bg {
+  background: linear-gradient(
+    135deg,
+    #3b82f6 0%,
+    #7c3aed 20%,
+    #ec4899 40%,
+    #22d3ee 60%,
+    #a855f7 80%,
+    #3b82f6 100%
+  );
+  background-size: 300% 300%;
+  animation: holographic-shift 4s ease-in-out infinite;
+}
+
+@keyframes holographic-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: hue-rotate(30deg);
+  }
+}
+
+/* ============================================
+   Neon Glow - Intense multi-color glow shadows
+   ============================================ */
+
+.neon-glow {
+  box-shadow:
+    0 0 10px rgba(59, 130, 246, 0.5),
+    0 0 20px rgba(59, 130, 246, 0.3),
+    0 0 40px rgba(168, 85, 247, 0.2),
+    0 0 80px rgba(236, 72, 153, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.neon-glow:hover {
+  box-shadow:
+    0 0 15px rgba(59, 130, 246, 0.6),
+    0 0 30px rgba(59, 130, 246, 0.4),
+    0 0 60px rgba(168, 85, 247, 0.3),
+    0 0 100px rgba(236, 72, 153, 0.15);
+}
+
+.neon-glow-cyan {
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.5),
+    0 0 20px rgba(34, 211, 238, 0.3),
+    0 0 40px rgba(34, 211, 238, 0.15);
+}
+
+.neon-glow-magenta {
+  box-shadow:
+    0 0 10px rgba(232, 121, 249, 0.5),
+    0 0 20px rgba(232, 121, 249, 0.3),
+    0 0 40px rgba(232, 121, 249, 0.15);
+}
+
+.neon-glow-green {
+  box-shadow:
+    0 0 10px rgba(74, 222, 128, 0.5),
+    0 0 20px rgba(74, 222, 128, 0.3),
+    0 0 40px rgba(74, 222, 128, 0.15);
+}
+
+/* ============================================
+   Glass Card - Multi-layer glassmorphism
+   ============================================ */
+
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 24px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15),
+    rgba(168, 85, 247, 0.08),
+    rgba(236, 72, 153, 0.05),
+    transparent
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================
+   Liquid Progress - Animated wave progress bar
+   ============================================ */
+
+.liquid-progress {
+  position: relative;
+  overflow: hidden;
+  background: hsl(230 15% 12%);
+  border-radius: 9999px;
+}
+
+.liquid-progress::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: var(--progress, 60%);
+  background: linear-gradient(90deg, var(--neon-1), var(--neon-2), var(--neon-4));
+  background-size: 200% 100%;
+  border-radius: inherit;
+  animation: liquid-wave 2s ease-in-out infinite;
+}
+
+.liquid-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: var(--progress, 60%);
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 255, 255, 0.08) 8px,
+    rgba(255, 255, 255, 0.08) 16px
+  );
+  border-radius: inherit;
+  animation: liquid-stripe 0.8s linear infinite;
+}
+
+@keyframes liquid-wave {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes liquid-stripe {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 32px 0;
+  }
+}
+
+/* ============================================
+   Magnetic Hover - Subtle attraction effect
+   ============================================ */
+
+.magnetic-hover {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.magnetic-hover:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.magnetic-hover:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+/* ============================================
+   Particle Background
+   ============================================ */
+
+.particle-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle-bg::before,
+.particle-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+.particle-bg::before {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--neon-1), transparent 70%);
+  top: -100px;
+  right: -100px;
+  animation: particle-float-1 8s ease-in-out infinite;
+}
+
+.particle-bg::after {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, var(--neon-2), transparent 70%);
+  bottom: -80px;
+  left: -80px;
+  animation: particle-float-2 10s ease-in-out infinite;
+}
+
+@keyframes particle-float-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-30px, 20px) scale(1.1);
+  }
+  66% {
+    transform: translate(20px, -10px) scale(0.95);
+  }
+}
+
+@keyframes particle-float-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(20px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-15px, 15px) scale(1.1);
+  }
+}
+
+/* ============================================
+   Mesh Gradient - Animated multi-stop gradient
+   ============================================ */
+
+.mesh-gradient {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: mesh-drift 12s ease-in-out infinite;
+}
+
+@keyframes mesh-drift {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  25% {
+    background-position: 50% 25%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 75%;
+  }
+}
+
+/* ============================================
+   3D Card - Perspective transform on hover
+   ============================================ */
+
+.card-3d {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.card-3d:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-3deg) translateZ(10px);
+  box-shadow:
+    8px 12px 30px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(59, 130, 246, 0.08);
+}
+
+/* ============================================
+   Text Glitch - Subtle glitch effect on text
+   ============================================ */
+
+.text-glitch {
+  position: relative;
+}
+
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.text-glitch::before {
+  color: #22d3ee;
+  animation: glitch-shift-1 4s ease-in-out infinite;
+  clip-path: inset(0 0 60% 0);
+}
+
+.text-glitch::after {
+  color: #ec4899;
+  animation: glitch-shift-2 4s ease-in-out infinite;
+  clip-path: inset(60% 0 0 0);
+}
+
+@keyframes glitch-shift-1 {
+  0%, 90%, 100% {
+    transform: translate(0);
+    opacity: 0;
+  }
+  92% {
+    transform: translate(2px, -1px);
+    opacity: 0.7;
+  }
+  94% {
+    transform: translate(-1px, 1px);
+    opacity: 0.5;
+  }
+  96% {
+    transform: translate(1px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes glitch-shift-2 {
+  0%, 88%, 100% {
+    transform: translate(0);
+    opacity: 0;
+  }
+  90% {
+    transform: translate(-2px, 1px);
+    opacity: 0.6;
+  }
+  93% {
+    transform: translate(1px, -1px);
+    opacity: 0.4;
+  }
+  95% {
+    transform: translate(-1px, 0);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   Aurora - Northern lights gradient animation
+   ============================================ */
+
+.aurora {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2) 0%,
+    rgba(34, 211, 238, 0.15) 25%,
+    rgba(168, 85, 247, 0.2) 50%,
+    rgba(74, 222, 128, 0.12) 75%,
+    rgba(59, 130, 246, 0.18) 100%
+  );
+  background-size: 400% 400%;
+  animation: aurora-flow 10s ease-in-out infinite;
+}
+
+@keyframes aurora-flow {
+  0% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+  25% {
+    background-position: 50% 0%;
+    filter: brightness(1.05);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.1);
+  }
+  75% {
+    background-position: 50% 100%;
+    filter: brightness(1.02);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+}
+
+/* ============================================
+   Neon gradient text utility variants
+   ============================================ */
+
+.text-neon-gradient {
+  background: linear-gradient(90deg, var(--neon-1), var(--neon-2), var(--neon-3), var(--neon-4));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-gradient-flow 4s ease-in-out infinite;
+}
+
+@keyframes text-gradient-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Market state glow borders */
+.border-bullish {
+  border-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
+}
+
+.border-bearish {
+  border-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+.border-neutral {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.2);
+}
+
+/* Skeleton loading utility */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(230 15% 10%) 0%,
+    hsl(230 15% 16%) 50%,
+    hsl(230 15% 10%) 100%
+  );
+  background-size: 200% 100%;
+  animation: foundation-skeleton-wave 1.8s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+@keyframes foundation-skeleton-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Custom scrollbar */
@@ -100,5 +590,397 @@ input[type='number'] {
 @media (max-width: 767px) {
   main {
     padding-bottom: 4rem;
+  }
+}
+
+/* Activity Feed Animations */
+@keyframes activity-electric-flash {
+  0% {
+    background: radial-gradient(ellipse at center, rgba(100, 220, 255, 0.15) 0%, transparent 70%);
+    opacity: 1;
+  }
+  50% {
+    background: radial-gradient(ellipse at center, rgba(100, 220, 255, 0.08) 0%, transparent 70%);
+    opacity: 0.6;
+  }
+  100% {
+    background: transparent;
+    opacity: 0;
+  }
+}
+
+@keyframes activity-item-enter {
+  0% {
+    transform: translateX(20px) scale(0.95);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-4px) scale(1.02);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(2px) scale(0.99);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes activity-feed-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(100, 220, 255, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(100, 220, 255, 0.06);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(100, 220, 255, 0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes activity-icon-rotate-in {
+  0% {
+    transform: rotate(-180deg) scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes activity-icon-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes activity-large-trade-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(251, 191, 36, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
+  }
+}
+
+@keyframes activity-tooltip-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes activity-time-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.activity-electric-flash {
+  animation: activity-electric-flash 0.8s ease-out forwards;
+}
+
+.activity-item-enter {
+  animation: activity-item-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.activity-feed-pulse {
+  animation: activity-feed-pulse 0.6s ease-out;
+}
+
+.activity-icon-bounce {
+  animation: activity-icon-bounce 2s ease-in-out infinite;
+}
+
+.activity-large-trade {
+  animation: activity-large-trade-glow 2s ease-in-out infinite;
+}
+
+.activity-tooltip-enter {
+  animation: activity-tooltip-enter 0.15s ease-out forwards;
+}
+
+.activity-time-fade {
+  animation: activity-time-fade 0.4s ease-out forwards;
+}
+
+/* Reduced motion support for activity feed */
+@media (prefers-reduced-motion: reduce) {
+  .activity-electric-flash,
+  .activity-item-enter,
+  .activity-feed-pulse,
+  .activity-icon-bounce,
+  .activity-large-trade,
+  .activity-tooltip-enter,
+  .activity-time-fade {
+    animation: none !important;
+  }
+}
+
+/* =============================================
+   Button Component Animations
+   ============================================= */
+@keyframes btn-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes btn-ripple {
+  from {
+    width: 0;
+    height: 0;
+    opacity: 0.4;
+  }
+  to {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes btn-check-draw {
+  0% { stroke-dasharray: 0 30; stroke-dashoffset: 0; }
+  100% { stroke-dasharray: 30 30; stroke-dashoffset: 0; }
+}
+
+@keyframes btn-neon-pulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(96, 165, 250, 0.4), 0 0 10px rgba(96, 165, 250, 0.2); }
+  50% { box-shadow: 0 0 12px rgba(96, 165, 250, 0.6), 0 0 24px rgba(96, 165, 250, 0.3); }
+}
+
+.btn-shimmer-overlay {
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 55%, transparent 60%);
+  background-size: 200% 100%;
+  animation: btn-shimmer 2s ease-in-out infinite;
+}
+
+.btn-loading-shimmer {
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 70%);
+  background-size: 200% 100%;
+  animation: btn-shimmer 1.5s ease-in-out infinite;
+}
+
+.btn-ripple {
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.3);
+  animation: btn-ripple 600ms ease-out forwards;
+}
+
+.btn-spinner {
+  animation: btn-spin 0.8s linear infinite;
+}
+
+.btn-check-icon {
+  animation: btn-check-draw 0.4s ease-out forwards;
+}
+
+/* =============================================
+   Badge Component Animations
+   ============================================= */
+@keyframes badge-pulse-ring {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes badge-holographic {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes badge-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes badge-electric-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes badge-glow-breathe {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+.badge-live-ring {
+  animation: badge-pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.badge-holographic-bg {
+  background-size: 200% 200%;
+  animation: badge-holographic 3s ease-in-out infinite;
+}
+
+.badge-bounce {
+  animation: badge-bounce 2s ease-in-out infinite;
+}
+
+.badge-electric-pulse {
+  animation: badge-electric-pulse 1.5s ease-in-out infinite;
+}
+
+.badge-glow-breathe {
+  animation: badge-glow-breathe 2s ease-in-out infinite;
+}
+
+/* Reduced motion support for buttons and badges */
+@media (prefers-reduced-motion: reduce) {
+  .btn-shimmer-overlay,
+  .btn-loading-shimmer,
+  .btn-ripple,
+  .btn-spinner,
+  .btn-check-icon,
+  .badge-live-ring,
+  .badge-holographic-bg,
+  .badge-bounce,
+  .badge-electric-pulse,
+  .badge-glow-breathe {
+    animation: none !important;
+  }
+}
+
+/* =============================================
+   Market Card 3D Holographic Animations
+   ============================================= */
+@keyframes mc-shimmer-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes mc-badge-hue-rotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes mc-pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px rgba(52, 211, 153, 0.4);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 12px 4px rgba(52, 211, 153, 0.6);
+  }
+}
+
+@keyframes mc-expand-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes mc-liquid-wave {
+  0%, 100% { transform: translateY(-50%) scaleY(1); }
+  50% { transform: translateY(-50%) scaleY(1.8); }
+}
+
+@keyframes mc-morph-border {
+  0%, 100% { border-radius: 9999px; }
+  25% { border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%; }
+  50% { border-radius: 60% 40% 40% 60% / 40% 60% 40% 60%; }
+  75% { border-radius: 40% 60% 60% 40% / 40% 60% 60% 40%; }
+}
+
+@keyframes mc-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Reduced motion support for market card */
+@media (prefers-reduced-motion: reduce) {
+  .mc-shimmer-sweep,
+  .mc-badge-hue-rotate,
+  .mc-pulse-glow,
+  .mc-expand-ring,
+  .mc-liquid-wave,
+  .mc-morph-border,
+  .mc-float {
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   Foundation: Global reduced motion overrides
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .holographic,
+  .holographic-bg {
+    animation: none;
+    filter: none;
+  }
+
+  .liquid-progress::before,
+  .liquid-progress::after {
+    animation: none;
+  }
+
+  .particle-bg::before,
+  .particle-bg::after {
+    animation: none;
+  }
+
+  .mesh-gradient {
+    animation: none;
+  }
+
+  .aurora {
+    animation: none;
+    filter: none;
+  }
+
+  .text-glitch::before,
+  .text-glitch::after {
+    display: none;
+  }
+
+  .text-neon-gradient {
+    animation: none;
+  }
+
+  .card-3d:hover {
+    transform: none;
+  }
+
+  .magnetic-hover:hover {
+    transform: none;
+  }
+
+  .skeleton {
+    animation: none;
   }
 }
