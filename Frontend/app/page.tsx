@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
-import { Loader2 } from 'lucide-react';
 import { Navbar } from '@/components/navbar';
 import { Portfolio } from '@/components/portfolio';
-import { MarketCard, MarketFilters, FeaturedMarket } from '@/components/market';
+import { MarketCard, MarketCardSkeleton, MarketFilters, FeaturedMarket } from '@/components/market';
 import { useMarkets, useAleoPools } from '@/hooks';
 
 export default function HomePage() {
@@ -78,9 +77,10 @@ export default function HomePage() {
 
             {/* Loading State */}
             {isLoadingPools ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-4">
-                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                <p className="text-sm text-white/40">Loading markets...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <MarketCardSkeleton key={i} />
+                ))}
               </div>
             ) : filteredMarkets.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">

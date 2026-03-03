@@ -5,6 +5,32 @@ import { TrendingUp, TrendingDown, Clock, DollarSign } from 'lucide-react';
 import { Market } from '@/types';
 import { cn } from '@/lib/utils';
 
+export function MarketCardSkeleton() {
+  return (
+    <div className="block w-full h-full min-h-[272px]">
+      <div className="flex flex-col h-full rounded-2xl p-6 overflow-hidden bg-[hsl(230,15%,8%)] border border-white/[0.06] animate-pulse">
+        <div className="flex items-start justify-between mb-4">
+          <div className="h-5 w-16 rounded-full bg-white/[0.06]" />
+          <div className="h-4 w-10 rounded bg-white/[0.06]" />
+        </div>
+        <div className="h-5 w-3/4 rounded bg-white/[0.06] mb-2" />
+        <div className="h-4 w-1/2 rounded bg-white/[0.06] mb-5" />
+        <div className="flex items-center justify-between mb-5">
+          <div className="h-7 w-28 rounded-lg bg-white/[0.04]" />
+          <div className="h-4 w-12 rounded bg-white/[0.06]" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="h-14 rounded-full bg-blue-500/[0.05] border border-blue-500/10" />
+          <div className="h-14 rounded-full bg-white/[0.03] border border-white/[0.06]" />
+        </div>
+        <div className="pt-3 border-t border-white/[0.06]">
+          <div className="h-4 w-24 rounded bg-white/[0.06]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface MarketCardProps {
   market: Market;
   index?: number;

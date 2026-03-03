@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { Market, MarketCategory } from '@/types';
 import { fetchAllMarkets, ApiMarket } from '@/lib/api-client';
 import { getPool, AleoPool } from '@/lib/aleo-client';
@@ -8,16 +9,13 @@ import { calculateOdds } from '@/lib/utils';
 
 // Convert API market to Market type, optionally enriched with on-chain data
 function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market {
-  // Use on-chain stakes if available, otherwise fall back to API data
   const optionAStakes = onChain ? onChain.option_a_stakes : parseInt(market.option_a_stakes || '0', 10);
   const optionBStakes = onChain ? onChain.option_b_stakes : parseInt(market.option_b_stakes || '0', 10);
 
   const { yesPrice, noPrice } = calculateOdds(optionAStakes, optionBStakes);
 
-  // Trader count from on-chain if available
   const traders = onChain ? onChain.total_no_of_stakes : 0;
 
-  // Determine status based on API status
   let status: 'live' | 'upcoming' | 'resolved' = 'live';
   if (market.status === 'pending') {
     status = 'live';
@@ -27,7 +25,6 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     status = 'resolved';
   }
 
-  // Convert deadline to readable date (deadline is Unix timestamp as string)
   const deadlineTimestamp = parseInt(market.deadline || '0', 10);
   const deadline = deadlineTimestamp ? new Date(deadlineTimestamp * 1000) : new Date();
   const endDate = deadline.toLocaleDateString('en-US', {
@@ -36,7 +33,6 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     year: 'numeric',
   });
 
-  // Use on-chain total_staked if available, otherwise API value
   const totalStaked = onChain ? onChain.total_staked : parseInt(market.total_staked || '0', 10);
   const volumeInAleo = totalStaked / 1_000_000;
   const volume = volumeInAleo >= 1000
@@ -64,29 +60,47 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
 }
 
 export function useAleoPools() {
+  const queryClient = useQueryClient();
+
+  // Phase 1: Fetch markets from API only (fast)
   const { data: pools = [], isLoading, error, refetch } = useQuery({
     queryKey: ['markets'],
     queryFn: async () => {
       const allMarkets = await fetchAllMarkets();
+      return allMarkets.map((market) => apiMarketToMarket(market));
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
-      // Try to enrich each market with on-chain data
+  // Phase 2: Enrich with on-chain data in the background
+  useEffect(() => {
+    if (pools.length === 0 || isLoading) return;
+
+    let cancelled = false;
+
+    async function enrichWithOnChain() {
+      const allMarkets = await fetchAllMarkets();
       const enriched = await Promise.all(
         allMarkets.map(async (market) => {
           try {
             const onChainPool = await getPool(market.market_id);
             return apiMarketToMarket(market, onChainPool);
           } catch {
-            // Fall back to API-only data if on-chain fetch fails
             return apiMarketToMarket(market);
           }
         })
       );
 
-      return enriched;
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
+      if (!cancelled) {
+        queryClient.setQueryData(['markets'], enriched);
+      }
+    }
+
+    enrichWithOnChain();
+
+    return () => { cancelled = true; };
+  }, [pools.length > 0 && !isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     pools,
