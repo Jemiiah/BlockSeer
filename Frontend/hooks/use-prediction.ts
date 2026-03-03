@@ -13,6 +13,9 @@ const DEFAULT_POOL_ID = '1field';
 const TX_POLL_INTERVAL = 3000; // 3 seconds
 const TX_POLL_MAX_ATTEMPTS = 40; // 2 minutes max
 
+// Execution fee for predict (cross-program call to credits.aleo needs higher fee)
+const PREDICT_FEE = 1_500_000; // 1.5 ALEO
+
 interface PredictionParams {
   poolId?: string;
   option: 1 | 2; // 1 for option A, 2 for option B
@@ -33,6 +36,7 @@ export function usePrediction() {
   const {
     address,
     executeTransaction,
+    requestRecords,
     transactionStatus,
   } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +49,6 @@ export function usePrediction() {
   const pollTransactionStatus = useCallback(
     async (tempTxId: string): Promise<{ confirmed: boolean; onChainId?: string; error?: string }> => {
       if (!transactionStatus) {
-        // Wallet doesn't support status polling — cannot confirm
         console.warn('Wallet does not support transactionStatus. TX submitted but unverified:', tempTxId);
         return { confirmed: false, onChainId: tempTxId, error: undefined };
       }
@@ -61,16 +64,52 @@ export function usePrediction() {
           if (status.status === 'failed' || status.status === 'rejected') {
             return { confirmed: false, error: status.error || `Transaction ${status.status} on-chain` };
           }
-          // Still pending — wait and retry
         } catch (e) {
           console.warn('Status poll error:', e);
         }
         await new Promise((r) => setTimeout(r, TX_POLL_INTERVAL));
       }
-      // Timed out — don't treat as error, tx may still be processing
       return { confirmed: false };
     },
     [transactionStatus]
+  );
+
+  /**
+   * Find a suitable unspent credits record with enough balance.
+   */
+  const findCreditsRecord = useCallback(
+    async (requiredAmount: number): Promise<string | null> => {
+      if (!requestRecords) return null;
+
+      try {
+        const records = await requestRecords('credits.aleo', true);
+        console.log('Available credits records:', records);
+
+        // Find a record with enough microcredits
+        for (const record of records) {
+          const rec = record as Record<string, unknown>;
+          // Records have a `microcredits` field and may be spent
+          if (rec.spent) continue;
+
+          const plaintext = (rec.plaintext || rec.data || rec) as Record<string, unknown>;
+          const microcredits = parseInt(
+            String(plaintext.microcredits || '0').replace('u64.private', '').replace('u64', ''),
+            10
+          );
+
+          if (microcredits >= requiredAmount) {
+            // Return the record plaintext string the wallet expects
+            if (typeof rec.plaintext === 'string') return rec.plaintext as string;
+            // Return the serialized record ciphertext if available
+            if (typeof rec.ciphertext === 'string') return rec.ciphertext as string;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch credits records:', e);
+      }
+      return null;
+    },
+    [requestRecords]
   );
 
   const makePrediction = useCallback(
@@ -101,7 +140,7 @@ export function usePrediction() {
       try {
         const randomNumber = generateRandomNumber();
         const formattedPoolId = poolId.endsWith('field') ? poolId : `${poolId}field`;
-        const amountInMicrocredits = amount * 1_000_000;
+        const amountInMicrocredits = Math.floor(amount * 1_000_000);
 
         console.log('=== PREDICTION DEBUG ===');
         console.log('Address:', address);
@@ -110,9 +149,6 @@ export function usePrediction() {
 
         // Build inputs matching the Leo function signature:
         //   predict(pool_id: field, option: u64, amount: u64, random_number: u64, user_credit: credits)
-        //
-        // We pass only the 4 non-record inputs. The wallet auto-resolves
-        // the 5th input (credits record) from the user's available records.
         const inputs: string[] = [
           formattedPoolId,
           `${option}u64`,
@@ -120,25 +156,35 @@ export function usePrediction() {
           `${randomNumber}u64`,
         ];
 
+        // Try to find and attach the credits record for the 5th input
+        const creditsRecord = await findCreditsRecord(amountInMicrocredits + PREDICT_FEE);
+        if (creditsRecord) {
+          inputs.push(creditsRecord);
+          console.log('Attached credits record as 5th input');
+        } else {
+          console.log('No explicit record found; relying on wallet auto-resolution');
+        }
+
         console.log('=== TRANSACTION ===');
         console.log('Program:', PROGRAM_ID);
         console.log('Function: predict');
-        console.log('Inputs:', inputs);
+        console.log('Inputs count:', inputs.length);
+        console.log('Fee:', PREDICT_FEE);
 
-        // Submit — the wallet handles record resolution and signing
+        // Submit — use public fee to avoid needing a separate private record for fees
         const result = await executeTransaction({
           program: PROGRAM_ID,
           function: 'predict',
           inputs: inputs,
-          fee: 100_000,
-          privateFee: true,
+          fee: PREDICT_FEE,
+          privateFee: false,
         });
 
         const tempTxId = typeof result === 'string' ? result : result?.transactionId;
-        console.log('Wallet returned temp TX ID:', tempTxId);
+        console.log('Wallet returned TX ID:', tempTxId);
 
         if (!tempTxId) {
-          throw new Error('Wallet did not return a transaction ID');
+          throw new Error('Wallet did not return a transaction ID — the transaction may have been rejected by the wallet.');
         }
 
         setTransactionId(tempTxId);
@@ -160,7 +206,6 @@ export function usePrediction() {
         setTransactionId(finalTxId);
         setIsLoading(false);
 
-        // If confirmed on-chain, it's a success. Otherwise it's pending (submitted but unverified).
         return {
           transactionId: finalTxId,
           status: txResult.confirmed ? 'success' : 'pending',
@@ -178,7 +223,7 @@ export function usePrediction() {
         };
       }
     },
-    [address, executeTransaction, pollTransactionStatus]
+    [address, executeTransaction, findCreditsRecord, pollTransactionStatus]
   );
 
   return {
