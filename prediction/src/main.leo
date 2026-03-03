@@ -1,14 +1,16 @@
+import credits.aleo;
+
 // The 'prediction' program.
-program predictionprivacyhackviii.aleo {
+program manifoldpredictionv2.aleo {
     // A simple token structure to represent prediction pools
     struct Pool {
      id: field,
      title: field,
-     description: field, 
+     description: field,
      options: [field; 2], // e.g., ["Yes", "No"]
      deadline: u64, // Unix timestamp when predictions close
      status: u8, // status of the pool 0 - open 1 closed 2 resolved
-     winning_option: u64, // Index of winning option (0 - unresolved, 1 - option 1 wins, 2 - option 2 wins) 
+     winning_option: u64, // Index of winning option (0 - unresolved, 1 - option 1 wins, 2 - option 2 wins)
      total_staked: u64, // Total amount staked across all options
      option_a_stakes: u64, // Total stakes for option A
      option_b_stakes: u64, // Total stakes for option B
@@ -19,11 +21,6 @@ program predictionprivacyhackviii.aleo {
 
     struct Default {
         id: u32
-    }
-
-    record credits {
-        owner : address,
-        microcredits : u64,
     }
 
     // A structure to represent user predictions
@@ -49,13 +46,12 @@ program predictionprivacyhackviii.aleo {
     // Track total predictions per pool
     mapping total_predictions: field => u64; // pool id => total predictions count
 
-    // Track user predictions todo(): implement logic to store user predictions
-    // mapping user_predictions: address => [field; 1]; // user address => prediction ids
-    storage user_predictions: [field]; // user address => prediction ids // todo(): implement logic to store user predictions
+    // Track user predictions
+    storage user_predictions: [field]; // user address => prediction ids
 
-    const ADMIN: address = aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5;
+    const ADMIN: address = aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
 
-    @admin(address="aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5")
+    @admin(address="aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd")
     async constructor() {}
 
     async transition initialize() -> Future {
@@ -138,17 +134,17 @@ program predictionprivacyhackviii.aleo {
         Mapping::set(pools, id, pool);
     }
 
-    // User makes a prediction by staking tokens
+    // User makes a prediction by staking tokens via credits.aleo/transfer_private
     async transition predict(
         pool_id: field,
         option: u64,
         amount: u64,
         random_number: u64,
-        user_credit: credits
-    ) -> (Prediction, credits, credits, Future) {
+        user_credit: credits.aleo/credits
+    ) -> (Prediction, credits.aleo/credits, credits.aleo/credits, Future) {
         assert(option == 1u64 || option == 2u64); // 1 - option 1, 2 - option 2
         assert_neq(amount, 0u64); // amount should be greater than 0
-      
+
         let prediction_id = BHP256::hash_to_field(random_number); // generate prediction id
 
         let prediction = Prediction {
@@ -159,7 +155,7 @@ program predictionprivacyhackviii.aleo {
             amount: amount,
             claimed: false,
         };
-        
+
         let option_a_stakes = 0u64;
         let option_b_stakes = 0u64;
         if option == 1u64 {
@@ -168,17 +164,10 @@ program predictionprivacyhackviii.aleo {
             option_b_stakes = amount;
         }
 
-        let updated_user_credits = credits {
-            owner: user_credit.owner,
-            microcredits: user_credit.microcredits - amount,
-        };
+        // Transfer credits from user to admin via credits.aleo
+        let (remaining, admin_credits): (credits.aleo/credits, credits.aleo/credits) = credits.aleo/transfer_private(user_credit, ADMIN, amount);
 
-        let new_admin_credits = credits {
-            owner: ADMIN,
-            microcredits: amount,
-        };
-
-        return (prediction, updated_user_credits, new_admin_credits, finalize_predict(pool_id, prediction_id, amount, option, option_a_stakes, option_b_stakes));
+        return (prediction, remaining, admin_credits, finalize_predict(pool_id, prediction_id, amount, option, option_a_stakes, option_b_stakes));
     }
 
     async function finalize_predict(
@@ -193,8 +182,8 @@ program predictionprivacyhackviii.aleo {
 
         // Update pool stakes
         pool.total_staked += amount;
-        pool.option_a_stakes += option_a_stakes;      
-        pool.option_b_stakes += option_b_stakes; 
+        pool.option_a_stakes += option_a_stakes;
+        pool.option_b_stakes += option_b_stakes;
 
         Mapping::set(pools, pool_id, pool);
 
@@ -202,7 +191,7 @@ program predictionprivacyhackviii.aleo {
         Mapping::set(total_predictions, pool_id, current_total + 1u64);
     }
 
-    // User checks if their prediction was correct, function will fail if the winning option does not match what is in the prediction record
+    // User checks if their prediction was correct
     async transition check_prediction (prediction: Prediction) -> (Future) {
         return finalize_check_prediction(prediction.pool_id, prediction.option);
     }
@@ -219,14 +208,15 @@ program predictionprivacyhackviii.aleo {
         assert_eq(pool.winning_option, user_option); // check if user's option matches winning option
     }
 
+    // Winner collects winnings via credits.aleo/transfer_private
     async transition collect_winnings (
-        winning_option: u64, 
-        total_staked: u64, 
-        option_a_stakes: u64, 
+        winning_option: u64,
+        total_staked: u64,
+        option_a_stakes: u64,
         option_b_stakes: u64,
-        admin_credit: credits,
+        admin_credit: credits.aleo/credits,
         prediction: Prediction
-    ) -> (Prediction, credits, credits, Future) {
+    ) -> (Prediction, credits.aleo/credits, credits.aleo/credits, Future) {
         // Check if user won
         assert_eq(winning_option, prediction.option);
         // Check if already claimed
@@ -249,29 +239,20 @@ program predictionprivacyhackviii.aleo {
             claimed: true,
         };
 
-        // remove form a credit of mine and send to the user
-        let updated_admin_credits = credits {
-            owner: admin_credit.owner,
-            microcredits: admin_credit.microcredits - winnings_amount,
-        };
+        // Transfer winnings from admin to user via credits.aleo
+        let (updated_admin, user_winnings): (credits.aleo/credits, credits.aleo/credits) = credits.aleo/transfer_private(admin_credit, prediction.owner, winnings_amount);
 
-        // add to user credits
-        let new_user_credits = credits {
-            owner: prediction.owner,
-            microcredits: winnings_amount,
-        };
-
-        return (updated_prediction, updated_admin_credits, new_user_credits, finalize_collect_winnings(prediction.pool_id, prediction.id, prediction.amount, winning_option, total_staked, option_a_stakes, option_b_stakes));
+        return (updated_prediction, updated_admin, user_winnings, finalize_collect_winnings(prediction.pool_id, prediction.id, prediction.amount, winning_option, total_staked, option_a_stakes, option_b_stakes));
     }
 
-    async function finalize_collect_winnings (pool_id: field, prediction_id: field, amount: u64, winning_option: u64, total_staked: u64, 
-        option_a_stakes: u64, 
+    async function finalize_collect_winnings (pool_id: field, prediction_id: field, amount: u64, winning_option: u64, total_staked: u64,
+        option_a_stakes: u64,
         option_b_stakes: u64)  {
         let pool_created = Mapping::contains(pools, pool_id);
         assert(pool_created); // ensure pool exists
 
         let pool = Mapping::get(pools, pool_id);
-        assert_eq(pool.status, 2u8);  // ensure pool is resolved   
+        assert_eq(pool.status, 2u8);  // ensure pool is resolved
         assert_eq(pool.winning_option, winning_option); // ensure the winning option matches
         assert_eq(pool.total_staked, total_staked); // ensure total staked matches
         assert_eq(pool.option_a_stakes, option_a_stakes); // ensure option a stakes matches

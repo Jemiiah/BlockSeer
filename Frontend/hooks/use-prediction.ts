@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
 // Program ID from the deployed Leo program
-const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
+const PROGRAM_ID = 'manifoldpredictionv2.aleo';
 
 // Default pool ID (will be made dynamic later)
 const DEFAULT_POOL_ID = '1field';
@@ -21,7 +21,7 @@ interface PredictionParams {
 
 interface PredictionResult {
   transactionId: string | undefined;
-  status: 'pending' | 'success' | 'error';
+  status: 'pending' | 'success' | 'error'; // pending = submitted but unverified
   error?: string;
 }
 
@@ -45,8 +45,9 @@ export function usePrediction() {
   const pollTransactionStatus = useCallback(
     async (tempTxId: string): Promise<{ confirmed: boolean; onChainId?: string; error?: string }> => {
       if (!transactionStatus) {
-        // Wallet doesn't support status polling — treat as optimistic success
-        return { confirmed: true };
+        // Wallet doesn't support status polling — cannot confirm
+        console.warn('Wallet does not support transactionStatus. TX submitted but unverified:', tempTxId);
+        return { confirmed: false, onChainId: tempTxId, error: undefined };
       }
 
       for (let attempt = 0; attempt < TX_POLL_MAX_ATTEMPTS; attempt++) {
@@ -159,9 +160,10 @@ export function usePrediction() {
         setTransactionId(finalTxId);
         setIsLoading(false);
 
+        // If confirmed on-chain, it's a success. Otherwise it's pending (submitted but unverified).
         return {
           transactionId: finalTxId,
-          status: 'success',
+          status: txResult.confirmed ? 'success' : 'pending',
         };
       } catch (e) {
         console.error('Prediction error:', e);

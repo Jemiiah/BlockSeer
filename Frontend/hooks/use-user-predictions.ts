@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
 // Program ID
-const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
+const PROGRAM_ID = 'manifoldpredictionv2.aleo';
 
 // Prediction record structure from Leo program
 export interface PredictionRecord {

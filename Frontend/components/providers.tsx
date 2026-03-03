@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AleoWalletProvider } from '@provablehq/aleo-wallet-adaptor-react';
 import { WalletModalProvider } from '@provablehq/aleo-wallet-adaptor-react-ui';
-import { WalletDecryptPermission } from '@provablehq/aleo-wallet-standard';
+import { WalletAdapter, WalletDecryptPermission } from '@provablehq/aleo-wallet-standard';
 import { Network } from '@provablehq/aleo-types';
 import { LeoWalletAdapter } from '@provablehq/aleo-wallet-adaptor-leo';
 import { PuzzleWalletAdapter } from '@provablehq/aleo-wallet-adaptor-puzzle';
@@ -13,7 +13,7 @@ import { GalileoWalletAdapter } from '@provablehq/aleo-wallet-adaptor-prove-alph
 
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css';
 
-const PROGRAM_ID = 'predictionprivacyhackviii.aleo';
+const PROGRAM_ID = 'manifoldpredictionv2.aleo';
 const CREDITS_PROGRAM = 'credits.aleo';
 
 const queryClient = new QueryClient({
@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new ShieldWalletAdapter(),
       new LeoWalletAdapter(),
       new PuzzleWalletAdapter(),
-    ] as any,
+    ] as WalletAdapter[],
     []
   );
 

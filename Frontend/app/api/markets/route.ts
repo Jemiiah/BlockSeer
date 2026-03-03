@@ -4,6 +4,28 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   ? 'http://localhost:3001'
   : 'https://blockseer.onrender.com';
 
+// Map Oracle-generated market IDs to actual on-chain pool IDs.
+// The Oracle hashes string titles while the contract hashes field values,
+// so IDs diverge. This mapping bridges them for markets deployed on-chain.
+const POOL_ID_OVERRIDES: Record<string, string> = {
+  // "Test-Prediction-Market" Oracle ID → manifoldpredictionv2.aleo on-chain pool ID
+  '31576401999306672833621161106305244191113734632727924field':
+    '6511715996739103003044919780246594659129815625196693239225108113980664847959field',
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPoolIdOverrides(data: any): any {
+  const markets = Array.isArray(data) ? data : data?.markets;
+  if (!Array.isArray(markets)) return data;
+
+  const patched = markets.map((m: Record<string, unknown>) => {
+    const id = m.market_id as string;
+    return POOL_ID_OVERRIDES[id] ? { ...m, market_id: POOL_ID_OVERRIDES[id] } : m;
+  });
+
+  return Array.isArray(data) ? patched : { ...data, markets: patched };
+}
+
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1500; // ms
 const CACHE_TTL = 60_000; // 60s
@@ -49,7 +71,7 @@ async function refreshCacheInBackground() {
 export async function GET() {
   // Serve from cache if fresh
   if (isCacheFresh()) {
-    return NextResponse.json(cachedData!.data, {
+    return NextResponse.json(applyPoolIdOverrides(cachedData!.data), {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         'X-Cache': 'HIT',
@@ -60,7 +82,7 @@ export async function GET() {
   // If stale cache exists, serve it immediately and refresh in background
   if (cachedData) {
     refreshCacheInBackground();
-    return NextResponse.json(cachedData.data, {
+    return NextResponse.json(applyPoolIdOverrides(cachedData.data), {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         'X-Cache': 'STALE',
@@ -84,7 +106,7 @@ export async function GET() {
     const data = await response.json();
     cachedData = { data, timestamp: Date.now() };
 
-    return NextResponse.json(data, {
+    return NextResponse.json(applyPoolIdOverrides(data), {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         'X-Cache': 'MISS',

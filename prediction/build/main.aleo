@@ -1,8 +1,5 @@
-program predictionprivacyhackviii.aleo;
-
-record credits:
-    owner as address.private;
-    microcredits as u64.private;
+import credits.aleo;
+program manifoldpredictionv2.aleo;
 
 record Prediction:
     owner as address.private;
@@ -56,7 +53,7 @@ mapping user_predictions__len__:
 
 function initialize:
     async initialize self.caller into r0;
-    output r0 as predictionprivacyhackviii.aleo/initialize.future;
+    output r0 as manifoldpredictionv2.aleo/initialize.future;
 
 finalize initialize:
     input r0 as address.public;
@@ -70,11 +67,11 @@ function create_pool:
     input r2 as [field; 2u32].public;
     input r3 as u64.public;
     hash.bhp256 r0 into r4 as field;
-    assert.eq self.caller aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5;
+    assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     cast r4 r0 r1 r2 r3 0u8 0u64 0u64 0u64 0u64 0u64 0u64 0u64 into r5 as Pool;
     async create_pool r4 r5 into r6;
     output r5 as Pool.private;
-    output r6 as predictionprivacyhackviii.aleo/create_pool.future;
+    output r6 as manifoldpredictionv2.aleo/create_pool.future;
 
 finalize create_pool:
     input r0 as field.public;
@@ -88,9 +85,9 @@ finalize create_pool:
 
 function lock_pool:
     input r0 as field.public;
-    assert.eq self.caller aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5;
+    assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async lock_pool r0 into r1;
-    output r1 as predictionprivacyhackviii.aleo/lock_pool.future;
+    output r1 as manifoldpredictionv2.aleo/lock_pool.future;
 
 finalize lock_pool:
     input r0 as field.public;
@@ -101,9 +98,9 @@ finalize lock_pool:
 function resolve_pool:
     input r0 as field.public;
     input r1 as u64.public;
-    assert.eq self.caller aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5;
+    assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async resolve_pool r0 r1 into r2;
-    output r2 as predictionprivacyhackviii.aleo/resolve_pool.future;
+    output r2 as manifoldpredictionv2.aleo/resolve_pool.future;
 
 finalize resolve_pool:
     input r0 as field.public;
@@ -117,7 +114,7 @@ function predict:
     input r1 as u64.private;
     input r2 as u64.private;
     input r3 as u64.private;
-    input r4 as credits.record;
+    input r4 as credits.aleo/credits.record;
     is.eq r1 1u64 into r5;
     is.eq r1 2u64 into r6;
     or r5 r6 into r7;
@@ -127,14 +124,12 @@ function predict:
     cast self.caller r8 r0 r1 r2 false into r9 as Prediction.record;
     ternary r5 r2 0u64 into r10;
     ternary r5 0u64 r2 into r11;
-    sub r4.microcredits r2 into r12;
-    cast r4.owner r12 into r13 as credits.record;
-    cast aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5 r4.microcredits into r14 as credits.record;
-    async predict r0 r8 r2 r1 r10 r11 into r15;
+    call credits.aleo/transfer_private r4 aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd r2 into r12 r13;
+    async predict r0 r8 r2 r1 r10 r11 into r14;
     output r9 as Prediction.record;
-    output r13 as credits.record;
-    output r14 as credits.record;
-    output r15 as predictionprivacyhackviii.aleo/predict.future;
+    output r12 as credits.aleo/credits.record;
+    output r13 as credits.aleo/credits.record;
+    output r14 as manifoldpredictionv2.aleo/predict.future;
 
 finalize predict:
     input r0 as field.public;
@@ -162,7 +157,7 @@ finalize predict:
 function check_prediction:
     input r0 as Prediction.record;
     async check_prediction r0.pool_id r0.option into r1;
-    output r1 as predictionprivacyhackviii.aleo/check_prediction.future;
+    output r1 as manifoldpredictionv2.aleo/check_prediction.future;
 
 finalize check_prediction:
     input r0 as field.public;
@@ -188,7 +183,7 @@ function collect_winnings:
     input r1 as u64.private;
     input r2 as u64.private;
     input r3 as u64.private;
-    input r4 as credits.record;
+    input r4 as credits.aleo/credits.record;
     input r5 as Prediction.record;
     assert.eq r0 r5.option;
     assert.eq r5.claimed false;
@@ -204,19 +199,16 @@ function collect_winnings:
     not r13 into r14;
     or r12 r14 into r15;
     assert.eq r15 true;
-    add r2 r3 into r16;
-    call calculate_winnings r5.amount r1 r16 into r17;
-    ternary r11 r17 0u64 into r18;
-    ternary r6 r10 r18 into r19;
-    cast r5.owner r5.id r5.pool_id r5.option r19 true into r20 as Prediction.record;
-    sub r4.microcredits r19 into r21;
-    cast r4.owner r21 into r22 as credits.record;
-    cast r5.owner r19 into r23 as credits.record;
-    async collect_winnings r5.pool_id r5.id r5.amount r0 r1 r2 r3 into r24;
-    output r20 as Prediction.record;
-    output r22 as credits.record;
-    output r23 as credits.record;
-    output r24 as predictionprivacyhackviii.aleo/collect_winnings.future;
+    call calculate_winnings r5.amount r1 r3 into r16;
+    ternary r11 r16 0u64 into r17;
+    ternary r6 r10 r17 into r18;
+    cast r5.owner r5.id r5.pool_id r5.option r18 true into r19 as Prediction.record;
+    call credits.aleo/transfer_private r4 r5.owner r18 into r20 r21;
+    async collect_winnings r5.pool_id r5.id r5.amount r0 r1 r2 r3 into r22;
+    output r19 as Prediction.record;
+    output r20 as credits.aleo/credits.record;
+    output r21 as credits.aleo/credits.record;
+    output r22 as manifoldpredictionv2.aleo/collect_winnings.future;
 
 finalize collect_winnings:
     input r0 as field.public;
@@ -236,4 +228,4 @@ finalize collect_winnings:
     assert.eq r8.option_b_stakes r6;
 
 constructor:
-    assert.eq program_owner aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5;
+    assert.eq program_owner aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
