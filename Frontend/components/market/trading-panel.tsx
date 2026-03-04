@@ -110,12 +110,11 @@ export function TradingPanel({ market }: TradingPanelProps) {
     }
 
     try {
-      setTxMessage('Finding credits record & submitting to wallet...');
-
       const result = await makePrediction({
         poolId: market.id,
         option: option as 1 | 2,
         amount: amountInAleo,
+        onProgress: (msg) => setTxMessage(msg),
       });
 
       if (result.status === 'success') {

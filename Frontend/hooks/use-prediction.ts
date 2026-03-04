@@ -17,10 +17,14 @@ const TX_POLL_MAX_ATTEMPTS = 40; // 2 minutes max
 // requires ZK proof generation which is computationally expensive.
 const PREDICT_FEE = 1_500_000; // 1.5 ALEO in microcredits
 
+// Timeout for requestRecords (some wallets hang on this)
+const RECORD_FETCH_TIMEOUT = 15_000; // 15 seconds
+
 interface PredictionParams {
   poolId?: string;
-  option: 1 | 2; // 1 for option A, 2 for option B
-  amount: number; // Amount in ALEO (will be converted to microcredits)
+  option: 1 | 2;
+  amount: number; // Amount in ALEO
+  onProgress?: (message: string) => void;
 }
 
 interface PredictionResult {
@@ -37,11 +41,10 @@ function generateRandomNumber(): number {
 type RecordItem = Record<string, any>;
 
 /**
- * Parse microcredits value from a record, handling various wallet formats.
- * Wallets return records in different shapes — this normalizes them.
+ * Parse microcredits from a record, handling various wallet formats.
  */
 function parseMicrocredits(record: RecordItem): number {
-  // Try plaintext object fields
+  // Try direct fields and nested data/plaintext objects
   const sources = [record, record.data, record.plaintext];
   for (const src of sources) {
     if (!src || typeof src !== 'object') continue;
@@ -54,7 +57,7 @@ function parseMicrocredits(record: RecordItem): number {
     }
   }
 
-  // Try parsing plaintext string format: "{ ..., microcredits: 5000000u64.private, ... }"
+  // Try parsing plaintext string: "{ ..., microcredits: 5000000u64.private, ... }"
   if (typeof record.plaintext === 'string') {
     const match = record.plaintext.match(/microcredits:\s*(\d+)u64/);
     if (match) return parseInt(match[1], 10) || 0;
@@ -65,22 +68,33 @@ function parseMicrocredits(record: RecordItem): number {
 
 /**
  * Extract the record value to pass as a transaction input.
- * The wallet adapter expects either the plaintext string or parsed record object.
  */
-function extractRecordInput(record: RecordItem): string | RecordItem | null {
-  // Prefer the plaintext string (Aleo record plaintext format)
+function extractRecordInput(record: RecordItem): string | null {
+  // Prefer plaintext string (Aleo record plaintext format)
   if (typeof record.plaintext === 'string' && record.plaintext.includes('microcredits')) {
     return record.plaintext;
   }
-  // Some wallets return the ciphertext
+  // Some wallets return ciphertext
   if (typeof record.ciphertext === 'string') {
     return record.ciphertext;
   }
-  // If the record itself looks like a plaintext object with the right fields
+  // If the record itself looks like a valid plaintext object
   if (record.owner && record.microcredits != null) {
     return JSON.stringify(record);
   }
   return null;
+}
+
+/**
+ * Wrap a promise with a timeout.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms),
+    ),
+  ]);
 }
 
 export function usePrediction() {
@@ -94,9 +108,6 @@ export function usePrediction() {
   const [error, setError] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
 
-  /**
-   * Poll transactionStatus until accepted/failed or timeout.
-   */
   const pollTransactionStatus = useCallback(
     async (tempTxId: string): Promise<{ confirmed: boolean; onChainId?: string; error?: string }> => {
       if (!transactionStatus) {
@@ -125,60 +136,15 @@ export function usePrediction() {
     [transactionStatus],
   );
 
-  /**
-   * Fetch the user's unspent credits records and find one with enough balance.
-   * Returns the record in the format expected by executeTransaction inputs.
-   */
-  const findCreditsRecord = useCallback(
-    async (requiredMicrocredits: number): Promise<{ input: string; microcredits: number } | null> => {
-      if (!requestRecords) {
-        console.warn('Wallet does not support requestRecords');
-        return null;
-      }
-
-      try {
-        const records = await requestRecords('credits.aleo', true);
-        console.log(`Found ${records.length} credits record(s)`);
-
-        // Sort by balance descending — pick the largest suitable record
-        const candidates = (records as RecordItem[])
-          .filter((r) => !r.spent)
-          .map((r) => ({ record: r, microcredits: parseMicrocredits(r) }))
-          .filter((r) => r.microcredits >= requiredMicrocredits)
-          .sort((a, b) => b.microcredits - a.microcredits);
-
-        if (candidates.length === 0) {
-          console.warn(
-            `No credits record with >= ${requiredMicrocredits} microcredits. ` +
-            `Records: ${(records as RecordItem[]).map((r) => parseMicrocredits(r)).join(', ')}`,
-          );
-          return null;
-        }
-
-        const best = candidates[0];
-        const input = extractRecordInput(best.record);
-
-        if (!input) {
-          console.warn('Could not extract a usable input from record:', best.record);
-          return null;
-        }
-
-        console.log(`Selected record with ${best.microcredits} microcredits`);
-        return { input: typeof input === 'string' ? input : JSON.stringify(input), microcredits: best.microcredits };
-      } catch (e) {
-        console.error('Error fetching credits records:', e);
-        return null;
-      }
-    },
-    [requestRecords],
-  );
-
   const makePrediction = useCallback(
     async ({
       poolId = DEFAULT_POOL_ID,
       option,
       amount,
+      onProgress,
     }: PredictionParams): Promise<PredictionResult> => {
+      const progress = onProgress || (() => {});
+
       if (!address) {
         return { transactionId: undefined, status: 'error', error: 'Wallet not connected' };
       }
@@ -203,10 +169,49 @@ export function usePrediction() {
         console.log('Option:', option);
         console.log('Amount:', amount, 'ALEO =', amountInMicrocredits, 'microcredits');
 
-        // ── Step 1: Find a credits record with enough balance ──
-        // The predict function requires a credits.aleo/credits record as the 5th input.
-        // This record is consumed via credits.aleo/transfer_private to stake funds.
-        const creditsRecord = await findCreditsRecord(amountInMicrocredits);
+        // ── Step 1: Find a credits record ──
+        progress('Fetching credits records from wallet...');
+
+        let creditsRecord: { input: string; microcredits: number } | null = null;
+
+        if (requestRecords) {
+          try {
+            const records = await withTimeout(
+              requestRecords('credits.aleo', true),
+              RECORD_FETCH_TIMEOUT,
+              'requestRecords',
+            );
+
+            console.log(`Found ${records.length} credits record(s)`);
+            console.log('Raw records:', JSON.stringify(records, null, 2));
+
+            const candidates = (records as RecordItem[])
+              .filter((r) => !r.spent)
+              .map((r) => ({ record: r, microcredits: parseMicrocredits(r) }))
+              .filter((r) => r.microcredits >= amountInMicrocredits)
+              .sort((a, b) => b.microcredits - a.microcredits);
+
+            console.log('Candidates:', candidates.map((c) => c.microcredits));
+
+            if (candidates.length > 0) {
+              const best = candidates[0];
+              const input = extractRecordInput(best.record);
+              if (input) {
+                creditsRecord = { input, microcredits: best.microcredits };
+                console.log(`Selected record: ${best.microcredits} microcredits`);
+              } else {
+                console.warn('Could not extract input from record:', best.record);
+              }
+            } else {
+              const allBalances = (records as RecordItem[])
+                .filter((r) => !r.spent)
+                .map((r) => parseMicrocredits(r));
+              console.warn('No record with enough balance. Unspent balances:', allBalances);
+            }
+          } catch (e) {
+            console.warn('requestRecords failed or timed out:', e);
+          }
+        }
 
         if (!creditsRecord) {
           throw new Error(
@@ -216,25 +221,24 @@ export function usePrediction() {
           );
         }
 
-        // ── Step 2: Build inputs in exact Leo function order ──
-        // predict(pool_id: field, option: u64, amount: u64, random_number: u64, user_credit: credits.aleo/credits)
+        // ── Step 2: Build inputs ──
+        progress('Building transaction...');
+
         const inputs: (string | RecordItem)[] = [
-          formattedPoolId,           // pool_id: field
-          `${option}u64`,            // option: u64
-          `${amountInMicrocredits}u64`, // amount: u64
-          `${randomNumber}u64`,      // random_number: u64
-          creditsRecord.input,       // user_credit: credits.aleo/credits record
+          formattedPoolId,
+          `${option}u64`,
+          `${amountInMicrocredits}u64`,
+          `${randomNumber}u64`,
+          creditsRecord.input,
         ];
 
         console.log('Inputs:', inputs.map((inp, i) =>
-          i === 4 ? `[credits record: ${creditsRecord.microcredits} microcredits]` : inp
+          i === 4 ? `[credits record: ${creditsRecord!.microcredits} microcredits]` : inp,
         ));
-        console.log('Fee:', PREDICT_FEE, 'microcredits');
 
-        // ── Step 3: Execute the transaction ──
-        // recordIndices tells the wallet which inputs are records (0-indexed).
-        // privateFee: false uses the public balance for fees so we don't need
-        // a second private record just for the fee.
+        // ── Step 3: Submit to wallet ──
+        progress('Waiting for wallet approval...');
+
         const result = await executeTransaction({
           program: PROGRAM_ID,
           function: 'predict',
@@ -256,7 +260,9 @@ export function usePrediction() {
 
         setTransactionId(tempTxId);
 
-        // ── Step 4: Poll for on-chain confirmation ──
+        // ── Step 4: Poll for confirmation ──
+        progress('Transaction submitted. Waiting for on-chain confirmation...');
+
         const txResult = await pollTransactionStatus(tempTxId);
 
         if (txResult.error) {
@@ -286,7 +292,7 @@ export function usePrediction() {
         return { transactionId: undefined, status: 'error', error: errorMessage };
       }
     },
-    [address, executeTransaction, findCreditsRecord, pollTransactionStatus],
+    [address, executeTransaction, requestRecords, pollTransactionStatus],
   );
 
   return {
