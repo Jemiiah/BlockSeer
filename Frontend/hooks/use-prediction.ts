@@ -45,7 +45,7 @@ type RecordItem = Record<string, any>;
  */
 function parseMicrocredits(record: RecordItem): number {
   // Try direct fields and nested data/plaintext objects
-  const sources = [record, record.data, record.plaintext];
+  const sources = [record, record.data, record.plaintext, record.recordPlaintext];
   for (const src of sources) {
     if (!src || typeof src !== 'object') continue;
     const raw = src.microcredits;
@@ -58,8 +58,10 @@ function parseMicrocredits(record: RecordItem): number {
   }
 
   // Try parsing plaintext string: "{ ..., microcredits: 5000000u64.private, ... }"
-  if (typeof record.plaintext === 'string') {
-    const match = record.plaintext.match(/microcredits:\s*(\d+)u64/);
+  // Shield wallet uses "recordPlaintext", others use "plaintext"
+  const plaintextStr = record.plaintext || record.recordPlaintext;
+  if (typeof plaintextStr === 'string') {
+    const match = plaintextStr.match(/microcredits:\s*(\d+)u64/);
     if (match) return parseInt(match[1], 10) || 0;
   }
 
@@ -71,12 +73,14 @@ function parseMicrocredits(record: RecordItem): number {
  */
 function extractRecordInput(record: RecordItem): string | null {
   // Prefer plaintext string (Aleo record plaintext format)
-  if (typeof record.plaintext === 'string' && record.plaintext.includes('microcredits')) {
-    return record.plaintext;
+  // Shield wallet uses "recordPlaintext", others use "plaintext"
+  const plaintextStr = record.plaintext || record.recordPlaintext;
+  if (typeof plaintextStr === 'string' && plaintextStr.includes('microcredits')) {
+    return plaintextStr;
   }
   // Some wallets return ciphertext
-  if (typeof record.ciphertext === 'string') {
-    return record.ciphertext;
+  if (typeof record.ciphertext === 'string' || typeof record.recordCiphertext === 'string') {
+    return record.ciphertext || record.recordCiphertext;
   }
   // If the record itself looks like a valid plaintext object
   if (record.owner && record.microcredits != null) {
