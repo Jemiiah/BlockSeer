@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
-import { ArrowLeft, Plus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui';
+import { ArrowLeft, Plus, Loader2, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { API_BASE_URL } from '@/lib/api-client';
 
 // Admin address - only this wallet can create markets
-const ADMIN_ADDRESS = 'aleo1jl3q3uywtdzlr8dln65xjc2mr7vwa2pm9fsenq49zsgsz5a8pqzs0j7cj5';
+const ADMIN_ADDRESS = 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 
 // Metric types available from your oracle
 const METRIC_TYPES = [
@@ -43,7 +44,8 @@ const initialForm: MarketForm = {
 };
 
 export default function AdminPage() {
-  const { address, connected } = useWallet();
+  const { address, connected, connecting } = useWallet();
+  const { setVisible: setWalletModalVisible } = useWalletModal();
   const [form, setForm] = useState<MarketForm>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -99,6 +101,19 @@ export default function AdminPage() {
     }
   };
 
+  // Loading state while wallet is auto-connecting
+  if (connecting) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-spin" />
+          <h1 className="text-2xl font-bold text-white mb-2">Connecting Wallet...</h1>
+          <p className="text-zinc-400 mb-6">Please wait while your wallet connects.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Not connected state
   if (!connected) {
     return (
@@ -106,10 +121,16 @@ export default function AdminPage() {
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Wallet Not Connected</h1>
-          <p className="text-zinc-400 mb-6">Connect your Leo Wallet to access the admin panel.</p>
-          <Link href="/">
-            <Button variant="outline">Go Back Home</Button>
-          </Link>
+          <p className="text-zinc-400 mb-6">Connect your wallet to access the admin panel.</p>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => setWalletModalVisible(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Zap className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </Button>
+            <Link href="/">
+              <Button variant="outline">Go Back Home</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
