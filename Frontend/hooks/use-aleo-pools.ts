@@ -2,10 +2,11 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Market, MarketCategory } from '@/types';
+import { Market } from '@/types';
 import { fetchAllMarkets, ApiMarket } from '@/lib/api-client';
 import { getPool, AleoPool } from '@/lib/aleo-client';
 import { calculateOdds } from '@/lib/utils';
+import { inferCategory } from '@/lib/category-map';
 
 // Convert API market to Market type, optionally enriched with on-chain data
 function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market {
@@ -60,7 +61,7 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     id: market.market_id,
     title: market.title || `Market`,
     subtitle: subtitle,
-    category: 'DeFi' as MarketCategory,
+    category: inferCategory(market.metric_type, market.title),
     endDate,
     volume,
     traders,

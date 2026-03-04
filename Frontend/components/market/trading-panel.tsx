@@ -30,6 +30,17 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
   const { connected, address, connecting, executeTransaction } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
+
+  // Auto-connect can get stuck — timeout after 4s
+  const [connectingTimedOut, setConnectingTimedOut] = useState(false);
+  useEffect(() => {
+    if (connecting) {
+      setConnectingTimedOut(false);
+      const timer = setTimeout(() => setConnectingTimedOut(true), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [connecting]);
+  const showConnecting = connecting && !connectingTimedOut && !connected;
   const { makePrediction, isLoading, error } = usePrediction();
   const { pool: onChainPool, totalPredictions, isLoading: poolLoading } = useOnChainPool(market.id);
   const {
@@ -468,10 +479,12 @@ export function TradingPanel({ market }: TradingPanelProps) {
       ) : (
         <Button
           onClick={handleConnectWallet}
-          disabled={connecting}
-          className="w-full py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/20 disabled:opacity-50"
+          className={cn(
+            "w-full py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/20",
+            showConnecting && "opacity-50"
+          )}
         >
-          {connecting ? (
+          {showConnecting ? (
             <span className="flex items-center gap-2">
               <Loader2 className="h-5 w-5 animate-spin" />
               Connecting...

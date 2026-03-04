@@ -1,15 +1,20 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Market, MarketFilter } from '@/types';
+import { Market, MarketFilter, MarketCategory } from '@/types';
 import { filterMarkets, countMarketsByStatus } from '@/lib/utils';
 
 export function useMarkets(initialMarkets: Market[]) {
   const [filter, setFilter] = useState<MarketFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<MarketCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredMarkets = useMemo(() => {
     let markets = filterMarkets(initialMarkets, filter);
+
+    if (categoryFilter !== 'all') {
+      markets = markets.filter((m) => m.category === categoryFilter);
+    }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -22,7 +27,7 @@ export function useMarkets(initialMarkets: Market[]) {
     }
 
     return markets;
-  }, [initialMarkets, filter, searchQuery]);
+  }, [initialMarkets, filter, categoryFilter, searchQuery]);
 
   const counts = useMemo(
     () => countMarketsByStatus(initialMarkets),
@@ -32,10 +37,13 @@ export function useMarkets(initialMarkets: Market[]) {
   return {
     filter,
     setFilter,
+    categoryFilter,
+    setCategoryFilter,
     searchQuery,
     setSearchQuery,
     filteredMarkets,
     liveCount: counts.live,
     upcomingCount: counts.upcoming,
+    resolvedCount: counts.resolved,
   };
 }

@@ -39,6 +39,19 @@ export function Navbar({
   const { setVisible: setWalletModalVisible } = useWalletModal();
   const address = walletAddress || '';
 
+  // Auto-connect can get stuck in "connecting" state if wallet extension
+  // isn't responding. Time it out so the user can still interact.
+  const [connectingTimedOut, setConnectingTimedOut] = useState(false);
+  useEffect(() => {
+    if (connecting) {
+      setConnectingTimedOut(false);
+      const timer = setTimeout(() => setConnectingTimedOut(true), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [connecting]);
+
+  const showConnecting = connecting && !connectingTimedOut && !connected;
+
   const handleConnect = () => setWalletModalVisible(true);
 
   const handleCopyAddress = () => {
@@ -251,14 +264,13 @@ export function Navbar({
                 /* Wallet Connect Button */
                 <button
                   onClick={handleConnect}
-                  disabled={connecting}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200',
                     'bg-blue-500 text-white hover:bg-blue-600',
-                    connecting && 'opacity-70 cursor-wait'
+                    showConnecting && 'opacity-70 cursor-wait'
                   )}
                 >
-                  {connecting ? (
+                  {showConnecting ? (
                     <>
                       <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                       Connecting...

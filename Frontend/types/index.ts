@@ -18,20 +18,11 @@ export interface Market {
   revealWindowEnd: number | null; // Unix timestamp
 }
 
-export type MarketCategory =
-  | 'Regulation'
-  | 'DeFi'
-  | 'Price'
-  | 'Network'
-  | 'Token'
-  | 'Layer 2'
-  | 'Staking'
-  | 'Institutional'
-  | 'Technology';
+export type MarketCategory = 'Crypto' | 'Tech' | 'AI' | 'DeFi';
 
 export type MarketStatus = 'live' | 'upcoming' | 'resolved';
 
-export type MarketFilter = 'all' | 'live' | 'upcoming';
+export type MarketFilter = 'all' | 'live' | 'upcoming' | 'resolved';
 
 export type OutcomeType = 'yes' | 'no';
 

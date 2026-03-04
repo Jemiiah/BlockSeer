@@ -39,6 +39,7 @@ interface MarketCardProps {
 export function MarketCard({ market, index = 0 }: MarketCardProps) {
   const isPositive = market.change >= 0;
   const isLive = market.status === 'live';
+  const isResolved = market.status === 'resolved';
 
   return (
     <Link
@@ -49,7 +50,8 @@ export function MarketCard({ market, index = 0 }: MarketCardProps) {
         className={cn(
           'flex flex-col h-full rounded-2xl p-6 overflow-hidden',
           'bg-[hsl(230,15%,8%)] border border-white/[0.06]',
-          'transition-colors duration-200 hover:border-white/[0.12]'
+          'transition-colors duration-200 hover:border-white/[0.12]',
+          isResolved && 'opacity-60'
         )}
       >
         {/* Header */}
@@ -61,6 +63,11 @@ export function MarketCard({ market, index = 0 }: MarketCardProps) {
             <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-400">
               <span className="block w-1.5 h-1.5 bg-emerald-400 rounded-full" />
               Live
+            </span>
+          )}
+          {isResolved && (
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-400">
+              Ended
             </span>
           )}
         </div>

@@ -16,11 +16,14 @@ export default function HomePage() {
   const {
     filter,
     setFilter,
+    categoryFilter,
+    setCategoryFilter,
     searchQuery,
     setSearchQuery,
     filteredMarkets,
     liveCount,
     upcomingCount,
+    resolvedCount,
   } = useMarkets(pools);
 
   const handleLogoClick = () => setActiveTab('market');
@@ -70,6 +73,9 @@ export default function HomePage() {
               onFilterChange={setFilter}
               liveCount={liveCount}
               upcomingCount={upcomingCount}
+              resolvedCount={resolvedCount}
+              categoryFilter={categoryFilter}
+              onCategoryChange={setCategoryFilter}
             />
 
             {/* Featured Market */}

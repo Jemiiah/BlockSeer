@@ -15,6 +15,7 @@ export function countMarketsByStatus(markets: Market[]) {
   return {
     live: markets.filter((m) => m.status === 'live').length,
     upcoming: markets.filter((m) => m.status === 'upcoming').length,
+    resolved: markets.filter((m) => m.status === 'resolved').length,
   };
 }
 
