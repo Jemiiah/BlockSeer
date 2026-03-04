@@ -8,7 +8,11 @@ import { usePrediction } from '@/hooks/use-prediction';
 import { useOnChainPool } from '@/hooks/use-on-chain-pool';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui';
-import { Loader2, BarChart3, ArrowDownToLine } from 'lucide-react';
+import { Loader2, BarChart3, ArrowDownToLine, AlertTriangle, RefreshCw } from 'lucide-react';
+
+const PROGRAM_ID = 'manifoldpredictionv2.aleo';
+const ADMIN_ADDRESS = 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
+const CREATE_POOL_FEE = 2_000_000; // 2 ALEO in microcredits
 
 interface TradingPanelProps {
   market: Market;
@@ -21,6 +25,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const [txMessage, setTxMessage] = useState<string>('');
 
   const [isConverting, setIsConverting] = useState(false);
+  const [isRenewing, setIsRenewing] = useState(false);
 
   const { connected, address, connecting, executeTransaction } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
@@ -75,6 +80,54 @@ export function TradingPanel({ market }: TradingPanelProps) {
   };
 
   const showConvertButton = txStatus === 'error' && txMessage.includes('private credits balance');
+
+  const isAdmin = address === ADMIN_ADDRESS;
+  const poolExpired = onChainPool && onChainPool.deadline > 0 && onChainPool.deadline < Math.floor(Date.now() / 1000);
+
+  // Renew an expired pool by calling create_pool with the same title but a future deadline.
+  // Using the same title produces the same BHP256 hash → same pool ID → overwrites the old entry.
+  const handleRenewPool = async () => {
+    if (!connected || !address || !executeTransaction || !onChainPool) return;
+
+    setIsRenewing(true);
+    setTxStatus('pending');
+    setTxMessage('Renewing pool with new deadline...');
+
+    try {
+      // Set deadline to 1 year from now
+      const newDeadline = Math.floor(Date.now() / 1000) + 365 * 24 * 3600;
+
+      const result = await executeTransaction({
+        program: PROGRAM_ID,
+        function: 'create_pool',
+        inputs: [
+          `${onChainPool.title}field`,
+          `${onChainPool.description}field`,
+          `[${onChainPool.options[0]}field, ${onChainPool.options[1]}field]`,
+          `${newDeadline}u64`,
+        ],
+        fee: CREATE_POOL_FEE,
+        privateFee: false,
+      });
+
+      const txId = typeof result === 'string' ? result : result?.transactionId;
+      if (txId) {
+        setTxStatus('success');
+        setTxMessage(
+          `Pool renewed! TX: ${txId.slice(0, 16)}... ` +
+          `Wait ~30s for on-chain confirmation, then try your prediction.`
+        );
+      } else {
+        setTxStatus('error');
+        setTxMessage('Failed to renew pool — wallet did not return a transaction ID.');
+      }
+    } catch (e) {
+      setTxStatus('error');
+      setTxMessage(e instanceof Error ? e.message : 'Failed to renew pool');
+    } finally {
+      setIsRenewing(false);
+    }
+  };
 
   // Compute on-chain stakes for odds calculation
   const onChainStakes = onChainPool
@@ -272,11 +325,38 @@ export function TradingPanel({ market }: TradingPanelProps) {
         </div>
       )}
 
+      {/* Pool Expired Warning */}
+      {poolExpired && (
+        <div className="mb-4 p-3 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-sm">
+          <p className="font-medium mb-1 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Pool Expired
+          </p>
+          <p className="text-amber-400/70 text-xs mb-2">
+            This pool&apos;s deadline has passed. Predictions cannot be placed on expired pools.
+          </p>
+          {isAdmin && (
+            <button
+              onClick={handleRenewPool}
+              disabled={isRenewing}
+              className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-sm font-medium border border-amber-500/20 transition-colors disabled:opacity-50"
+            >
+              {isRenewing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Renew Pool (Admin)
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Submit Button */}
       {connected ? (
         <Button
           onClick={handleTrade}
-          disabled={isLoading || !amount || parseFloat(amount) <= 0}
+          disabled={isLoading || !amount || parseFloat(amount) <= 0 || !!poolExpired}
           className="w-full py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
