@@ -63,7 +63,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
     }
 
     try {
-      setTxMessage('Submitting to wallet...');
+      setTxMessage('Finding credits record & submitting to wallet...');
 
       const result = await makePrediction({
         poolId: market.id,
