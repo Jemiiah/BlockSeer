@@ -134,8 +134,16 @@ async function getMappingValue(mappingName: string, key: string): Promise<string
     }
     const text = await response.text();
     console.log(`✅ Raw blockchain response for ${mappingName}[${key}]:`, text);
-    // The API returns JSON-encoded strings, strip surrounding quotes
-    const value = text.replace(/^"|"$/g, '').trim();
+    // The API returns JSON-encoded strings — use JSON.parse to properly
+    // decode escape sequences (e.g. \n → actual newlines) so the struct
+    // parser can split keys correctly via .trim().
+    let value: string;
+    try {
+      value = JSON.parse(text);
+    } catch {
+      // Fallback: strip surrounding quotes manually
+      value = text.replace(/^"|"$/g, '').trim();
+    }
     if (!value || value === 'null') return null;
     return value;
   } catch (error) {
