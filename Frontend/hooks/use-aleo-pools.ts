@@ -9,10 +9,25 @@ import { calculateOdds } from '@/lib/utils';
 
 // Convert API market to Market type, optionally enriched with on-chain data
 function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market {
+  const now = Math.floor(Date.now() / 1000);
+  const revealWindowEnd = market.reveal_window_end ?? null;
+
+  // Reveal window is active when pool is locked and reveal window hasn't ended yet
+  const isInRevealWindow = market.status === 'locked'
+    && revealWindowEnd !== null
+    && now < revealWindowEnd;
+
+  // Odds are revealed when: pool is resolved, OR pool is locked and reveal window has ended
+  const oddsRevealed = market.status === 'resolved'
+    || (market.status === 'locked' && revealWindowEnd !== null && now >= revealWindowEnd);
+
   const optionAStakes = onChain ? onChain.option_a_stakes : parseInt(market.option_a_stakes || '0', 10);
   const optionBStakes = onChain ? onChain.option_b_stakes : parseInt(market.option_b_stakes || '0', 10);
 
-  const { yesPrice, noPrice } = calculateOdds(optionAStakes, optionBStakes);
+  // If odds not revealed (betting phase or reveal window), show 50/50
+  const { yesPrice, noPrice } = oddsRevealed
+    ? calculateOdds(optionAStakes, optionBStakes)
+    : { yesPrice: 50, noPrice: 50 };
 
   const traders = onChain ? onChain.total_no_of_stakes : 0;
 
@@ -56,6 +71,9 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     description: market.description || `A prediction market on Manifold.`,
     resolution: `This market resolves based on the ${market.metric_type} oracle. Threshold: ${market.threshold}`,
     history: [yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice, yesPrice],
+    oddsRevealed,
+    isInRevealWindow,
+    revealWindowEnd,
   };
 }
 

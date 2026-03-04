@@ -17,6 +17,7 @@ import {
     CREATE_POOL_FEE,
     LOCK_POOL_FEE,
     RESOLVE_POOL_FEE,
+    REVEAL_WINDOW_SECONDS,
 } from "./config.js";
 
 // Setup SDK
@@ -62,6 +63,18 @@ async function syncOnChainData() {
     for (const market of allMarkets) {
         const { market_id } = market;
         try {
+            // During blind betting phase, on-chain stakes are 0 (users haven't revealed yet).
+            // Use Oracle-tracked aggregates for pending markets and locked markets still in reveal window.
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            const revealWindowEnd = market.reveal_window_end ? parseInt(market.reveal_window_end, 10) : null;
+            const inRevealWindow = market.status === 'locked' && revealWindowEnd && currentTimestamp < revealWindowEnd;
+            if (market.status === 'pending' || inRevealWindow) {
+                // Use Oracle-tracked aggregates instead of on-chain data (which may be partial during reveals)
+                const aggregates = await db.getMarketAggregateStakes(market_id);
+                await db.updateMarketStats(market_id, aggregates.total_staked, aggregates.option_a_stakes, aggregates.option_b_stakes);
+                continue;
+            }
+
             // Use market_id directly if it's already a field, otherwise convert
             const marketIdField = market_id.endsWith('field') ? market_id : stringToField(market_id);
 
@@ -270,7 +283,7 @@ export async function startWorker() {
                 }
             }
 
-            // 2. Handle Pending -> Locked
+            // 2. Handle Pending -> Locked (+ set reveal window)
             const pending = await db.getPendingMarkets();
             for (const market of pending) {
                 const { market_id, deadline } = market;
@@ -279,13 +292,18 @@ export async function startWorker() {
                     const success = await lockMarket(market_id);
                     if (success) {
                         await db.markLocked(market_id);
+                        // Set reveal window: users have REVEAL_WINDOW_SECONDS to reveal their predictions
+                        const revealEnd = currentTime + REVEAL_WINDOW_SECONDS;
+                        await db.setRevealWindowEnd(market_id, revealEnd);
+                        console.log(`⏱️ Reveal window open until ${new Date(revealEnd * 1000).toISOString()} for market ${market_id}`);
                     }
                 }
             }
 
-            // 3. Handle Locked -> Resolved
-            const locked = await db.getLockedMarkets();
-            for (const market of locked) {
+            // 3. Handle Locked + Reveal window ended -> Resolve
+            // (No admin reveal step — users reveal their own predictions on-chain)
+            const revealed = await db.getMarketsReadyForResolution();
+            for (const market of revealed) {
                 const { market_id, threshold, metric_type } = market;
 
                 console.log(`🔎 Resolution check for locked market: ${market_id} (Metric: ${metric_type})`);

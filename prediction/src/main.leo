@@ -1,7 +1,7 @@
 import credits.aleo;
 
 // The 'prediction' program.
-program manifoldpredictionv2.aleo {
+program manifoldpredictionv4.aleo {
     // A simple token structure to represent prediction pools
     struct Pool {
      id: field,
@@ -48,6 +48,9 @@ program manifoldpredictionv2.aleo {
 
     // Track user predictions
     storage user_predictions: [field]; // user address => prediction ids
+
+    // Prevent double-betting with the same prediction ID
+    mapping commitments: field => field; // prediction_id => pool_id
 
     const ADMIN: address = aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
 
@@ -135,6 +138,8 @@ program manifoldpredictionv2.aleo {
     }
 
     // User makes a prediction by staking tokens via credits.aleo/transfer_private
+    // Privacy: amount, option, and per-option stakes are NOT published on-chain.
+    // The Oracle tracks predictions off-chain and reveals aggregates after deadline.
     async transition predict(
         pool_id: field,
         option: u64,
@@ -156,22 +161,14 @@ program manifoldpredictionv2.aleo {
             claimed: false,
         };
 
-        let option_a_stakes = 0u64;
-        let option_b_stakes = 0u64;
-        if option == 1u64 {
-            option_a_stakes = amount;
-        } else {
-            option_b_stakes = amount;
-        }
-
         // Transfer credits from user to admin via credits.aleo
         let (remaining, admin_credits): (credits.aleo/credits, credits.aleo/credits) = credits.aleo/transfer_private(user_credit, ADMIN, amount);
 
-        return (prediction, remaining, admin_credits, finalize_predict(pool_id, prediction_id, amount, option, option_a_stakes, option_b_stakes));
+        return (prediction, remaining, admin_credits, finalize_predict(pool_id, prediction_id));
     }
 
     async function finalize_predict(
-        pool_id: field, prediction_id: field, amount: u64, option: u64, option_a_stakes: u64, option_b_stakes: u64
+        pool_id: field, prediction_id: field
     ) {
         let pool_created = Mapping::contains(pools, pool_id);
         assert(pool_created); // ensure pool exists
@@ -180,15 +177,69 @@ program manifoldpredictionv2.aleo {
         assert_eq(pool.status, 0u8);  // ensure pool is open
         assert(pool.deadline > block.timestamp as u64); // ensure deadline not passed
 
-        // Update pool stakes
-        pool.total_staked += amount;
-        pool.option_a_stakes += option_a_stakes;
-        pool.option_b_stakes += option_b_stakes;
+        // Ensure prediction ID is unique (prevent double-betting)
+        let already_committed = Mapping::contains(commitments, prediction_id);
+        assert(!already_committed);
+        Mapping::set(commitments, prediction_id, pool_id);
 
-        Mapping::set(pools, pool_id, pool);
-
+        // Increment prediction counter only — no stakes touch public state
         let current_total = Mapping::get(total_predictions, pool_id);
         Mapping::set(total_predictions, pool_id, current_total + 1u64);
+    }
+
+    // User-driven reveal: each user reveals their own prediction after pool locks.
+    // No admin involvement — only the Prediction record holder can call this.
+    // The record is cryptographically owned, so it can't be forged or revealed by others.
+    async transition reveal_prediction(
+        prediction: Prediction
+    ) -> (Prediction, Future) {
+        let revealed = Prediction {
+            id: prediction.id,
+            owner: prediction.owner,
+            pool_id: prediction.pool_id,
+            option: prediction.option,
+            amount: prediction.amount,
+            claimed: prediction.claimed,
+        };
+        return (revealed, finalize_reveal_prediction(
+            prediction.pool_id, prediction.id, prediction.option, prediction.amount
+        ));
+    }
+
+    async function finalize_reveal_prediction(
+        pool_id: field, prediction_id: field, option: u64, amount: u64
+    ) {
+        let committed_pool = Mapping::get(commitments, prediction_id);
+        assert_eq(committed_pool, pool_id); // commitment must match this pool
+        assert_neq(committed_pool, 0field); // not already revealed (0field = sentinel for revealed)
+
+        let pool = Mapping::get(pools, pool_id);
+        assert_eq(pool.status, 1u8); // pool must be locked
+
+        assert(option == 1u64 || option == 2u64);
+
+        // Accumulate stakes on-chain — trustlessly, from each user's own record
+        // Leo requires ternary instead of if/else for reassignment in async functions
+        let new_option_a: u64 = option == 1u64 ? pool.option_a_stakes + amount : pool.option_a_stakes;
+        let new_option_b: u64 = option == 2u64 ? pool.option_b_stakes + amount : pool.option_b_stakes;
+
+        let updated_pool = Pool {
+            id: pool.id,
+            title: pool.title,
+            description: pool.description,
+            options: pool.options,
+            deadline: pool.deadline,
+            status: pool.status,
+            winning_option: pool.winning_option,
+            total_staked: pool.total_staked + amount,
+            option_a_stakes: new_option_a,
+            option_b_stakes: new_option_b,
+            total_no_of_stakes: pool.total_no_of_stakes,
+            total_no_of_stakes_option_a: pool.total_no_of_stakes_option_a,
+            total_no_of_stakes_option_b: pool.total_no_of_stakes_option_b,
+        };
+        Mapping::set(pools, pool_id, updated_pool);
+        Mapping::set(commitments, prediction_id, 0field); // sentinel = revealed
     }
 
     // User checks if their prediction was correct
@@ -257,6 +308,10 @@ program manifoldpredictionv2.aleo {
         assert_eq(pool.total_staked, total_staked); // ensure total staked matches
         assert_eq(pool.option_a_stakes, option_a_stakes); // ensure option a stakes matches
         assert_eq(pool.option_b_stakes, option_b_stakes); // ensure option b
+
+        // Require that the prediction was revealed (commitment == 0field sentinel)
+        let commitment_val = Mapping::get(commitments, prediction_id);
+        assert_eq(commitment_val, 0field); // must have revealed before claiming
     }
 
     // helper function to calculate winnings

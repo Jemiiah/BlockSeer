@@ -13,6 +13,9 @@ export interface Market {
   noPrice: number;
   change: number;
   history: number[];
+  oddsRevealed: boolean;
+  isInRevealWindow: boolean;
+  revealWindowEnd: number | null; // Unix timestamp
 }
 
 export type MarketCategory =

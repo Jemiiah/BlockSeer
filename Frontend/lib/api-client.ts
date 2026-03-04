@@ -22,6 +22,7 @@ export interface ApiMarket {
   option_b_stakes: string;
   option_a_label: string;
   option_b_label: string;
+  reveal_window_end?: number | null;
 }
 
 // Fetch all markets (through Next.js proxy to avoid CORS)

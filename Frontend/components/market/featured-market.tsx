@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { Flame, TrendingUp, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Flame, TrendingUp, Users, ChevronLeft, ChevronRight, Lock, Timer } from 'lucide-react';
 import { Market } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -186,17 +186,37 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
 
           {/* Stats row */}
           <div className="flex flex-wrap items-end gap-6">
-            {/* Yes price */}
-            <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-emerald-500/[0.08] border-emerald-500/20">
-              <span className="text-3xl font-bold text-emerald-400">{market.yesPrice}¢</span>
-              <span className="text-xs text-emerald-400/70 font-medium">Yes</span>
-            </div>
+            {market.oddsRevealed ? (
+              <>
+                {/* Yes price */}
+                <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-emerald-500/[0.08] border-emerald-500/20">
+                  <span className="text-3xl font-bold text-emerald-400">{market.yesPrice}¢</span>
+                  <span className="text-xs text-emerald-400/70 font-medium">Yes</span>
+                </div>
 
-            {/* No price */}
-            <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-red-500/[0.08] border-red-500/20">
-              <span className="text-3xl font-bold text-red-400">{market.noPrice}¢</span>
-              <span className="text-xs text-red-400/70 font-medium">No</span>
-            </div>
+                {/* No price */}
+                <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-red-500/[0.08] border-red-500/20">
+                  <span className="text-3xl font-bold text-red-400">{market.noPrice}¢</span>
+                  <span className="text-xs text-red-400/70 font-medium">No</span>
+                </div>
+              </>
+            ) : market.isInRevealWindow ? (
+              <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.06]">
+                <Timer className="w-5 h-5 text-violet-400" />
+                <div>
+                  <span className="text-lg font-bold text-violet-400">Reveal Window Open</span>
+                  <p className="text-xs text-violet-400/60">Reveal your predictions before time runs out</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06]">
+                <Lock className="w-5 h-5 text-amber-400" />
+                <div>
+                  <span className="text-lg font-bold text-amber-400">Blind Betting Active</span>
+                  <p className="text-xs text-amber-400/60">Odds revealed after deadline</p>
+                </div>
+              </div>
+            )}
 
             {/* Volume and traders */}
             <div className="flex items-center gap-5 text-white/40 ml-auto">

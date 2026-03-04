@@ -40,6 +40,20 @@ export async function initDb(): Promise<void> {
         await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS option_a_label TEXT DEFAULT 'YES'`);
         await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS option_b_label TEXT DEFAULT 'NO'`);
         await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS on_chain BOOLEAN DEFAULT FALSE`);
+        await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS reveal_window_end BIGINT`);
+
+        // Predictions table for blind betting — tracks predictions off-chain
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS predictions (
+                prediction_id TEXT PRIMARY KEY,
+                market_id TEXT NOT NULL,
+                option INTEGER NOT NULL CHECK (option IN (1, 2)),
+                amount BIGINT NOT NULL,
+                tx_id TEXT,
+                reported_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+
         console.log("📦 Database initialized successfully (PostgreSQL).");
     } catch (err: any) {
         console.error("❌ Database initialization error:", err.message);
@@ -190,6 +204,89 @@ export async function markOnChain(marketId: string): Promise<void> {
         console.log(`⛓️ Market ${marketId} marked as on-chain in DB.`);
     } catch (err: any) {
         console.error(`❌ Error marking market ${marketId} as on-chain:`, err.message);
+        throw err;
+    }
+}
+
+// --- Blind Betting: Prediction tracking ---
+
+export async function addPrediction(
+    predictionId: string,
+    marketId: string,
+    option: number,
+    amount: number,
+    txId: string | null
+): Promise<void> {
+    const query = `
+    INSERT INTO predictions (prediction_id, market_id, option, amount, tx_id)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (prediction_id) DO NOTHING
+    `;
+    try {
+        await pool.query(query, [predictionId, marketId, option, amount, txId]);
+        console.log(`📝 Prediction ${predictionId} recorded for market ${marketId}.`);
+    } catch (err: any) {
+        console.error(`❌ Error adding prediction ${predictionId}:`, err.message);
+        throw err;
+    }
+}
+
+export async function getMarketAggregateStakes(marketId: string): Promise<{
+    total_staked: number;
+    option_a_stakes: number;
+    option_b_stakes: number;
+}> {
+    const query = `
+    SELECT
+        COALESCE(SUM(amount), 0) AS total_staked,
+        COALESCE(SUM(CASE WHEN option = 1 THEN amount ELSE 0 END), 0) AS option_a_stakes,
+        COALESCE(SUM(CASE WHEN option = 2 THEN amount ELSE 0 END), 0) AS option_b_stakes
+    FROM predictions
+    WHERE market_id = $1
+    `;
+    try {
+        const { rows } = await pool.query(query, [marketId]);
+        return {
+            total_staked: parseInt(rows[0].total_staked, 10),
+            option_a_stakes: parseInt(rows[0].option_a_stakes, 10),
+            option_b_stakes: parseInt(rows[0].option_b_stakes, 10),
+        };
+    } catch (err: any) {
+        console.error(`❌ Error fetching aggregate stakes for ${marketId}:`, err.message);
+        throw err;
+    }
+}
+
+export async function setRevealWindowEnd(marketId: string, timestamp: number): Promise<void> {
+    const query = `UPDATE markets SET reveal_window_end = $1 WHERE market_id = $2`;
+    try {
+        await pool.query(query, [timestamp, marketId]);
+        console.log(`⏱️ Market ${marketId} reveal window ends at ${new Date(timestamp * 1000).toISOString()}.`);
+    } catch (err: any) {
+        console.error(`❌ Error setting reveal window for ${marketId}:`, err.message);
+        throw err;
+    }
+}
+
+export async function getMarketsReadyForResolution(): Promise<any[]> {
+    try {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const query = `SELECT * FROM markets WHERE status = 'locked' AND reveal_window_end IS NOT NULL AND reveal_window_end < $1`;
+        const { rows } = await pool.query(query, [currentTime]);
+        return rows;
+    } catch (err: any) {
+        console.error("❌ Error fetching markets ready for resolution:", err.message);
+        throw err;
+    }
+}
+
+export async function predictionExists(predictionId: string): Promise<boolean> {
+    try {
+        const query = `SELECT 1 FROM predictions WHERE prediction_id = $1`;
+        const { rows } = await pool.query(query, [predictionId]);
+        return rows.length > 0;
+    } catch (err: any) {
+        console.error(`❌ Error checking prediction ${predictionId}:`, err.message);
         throw err;
     }
 }

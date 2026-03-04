@@ -1,5 +1,5 @@
 import credits.aleo;
-program manifoldpredictionv2.aleo;
+program manifoldpredictionv4.aleo;
 
 record Prediction:
     owner as address.private;
@@ -35,6 +35,10 @@ mapping total_predictions:
     key as field.public;
     value as u64.public;
 
+mapping commitments:
+    key as field.public;
+    value as field.public;
+
 mapping pools_id__:
     key as u32.public;
     value as field.public;
@@ -53,7 +57,7 @@ mapping user_predictions__len__:
 
 function initialize:
     async initialize self.caller into r0;
-    output r0 as manifoldpredictionv2.aleo/initialize.future;
+    output r0 as manifoldpredictionv4.aleo/initialize.future;
 
 finalize initialize:
     input r0 as address.public;
@@ -71,7 +75,7 @@ function create_pool:
     cast r4 r0 r1 r2 r3 0u8 0u64 0u64 0u64 0u64 0u64 0u64 0u64 into r5 as Pool;
     async create_pool r4 r5 into r6;
     output r5 as Pool.private;
-    output r6 as manifoldpredictionv2.aleo/create_pool.future;
+    output r6 as manifoldpredictionv4.aleo/create_pool.future;
 
 finalize create_pool:
     input r0 as field.public;
@@ -87,7 +91,7 @@ function lock_pool:
     input r0 as field.public;
     assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async lock_pool r0 into r1;
-    output r1 as manifoldpredictionv2.aleo/lock_pool.future;
+    output r1 as manifoldpredictionv4.aleo/lock_pool.future;
 
 finalize lock_pool:
     input r0 as field.public;
@@ -100,7 +104,7 @@ function resolve_pool:
     input r1 as u64.public;
     assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async resolve_pool r0 r1 into r2;
-    output r2 as manifoldpredictionv2.aleo/resolve_pool.future;
+    output r2 as manifoldpredictionv4.aleo/resolve_pool.future;
 
 finalize resolve_pool:
     input r0 as field.public;
@@ -122,42 +126,65 @@ function predict:
     assert.neq r2 0u64;
     hash.bhp256 r3 into r8 as field;
     cast self.caller r8 r0 r1 r2 false into r9 as Prediction.record;
-    ternary r5 r2 0u64 into r10;
-    ternary r5 0u64 r2 into r11;
-    call credits.aleo/transfer_private r4 aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd r2 into r12 r13;
-    async predict r0 r8 r2 r1 r10 r11 into r14;
+    call credits.aleo/transfer_private r4 aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd r2 into r10 r11;
+    async predict r0 r8 into r12;
     output r9 as Prediction.record;
-    output r12 as credits.aleo/credits.record;
-    output r13 as credits.aleo/credits.record;
-    output r14 as manifoldpredictionv2.aleo/predict.future;
+    output r10 as credits.aleo/credits.record;
+    output r11 as credits.aleo/credits.record;
+    output r12 as manifoldpredictionv4.aleo/predict.future;
 
 finalize predict:
     input r0 as field.public;
     input r1 as field.public;
+    contains pools[r0] into r2;
+    assert.eq r2 true;
+    get pools[r0] into r3;
+    assert.eq r3.status 0u8;
+    cast block.timestamp into r4 as u64;
+    gt r3.deadline r4 into r5;
+    assert.eq r5 true;
+    contains commitments[r1] into r6;
+    not r6 into r7;
+    assert.eq r7 true;
+    set r0 into commitments[r1];
+    get total_predictions[r0] into r8;
+    add r8 1u64 into r9;
+    set r9 into total_predictions[r0];
+
+function reveal_prediction:
+    input r0 as Prediction.record;
+    cast r0.owner r0.id r0.pool_id r0.option r0.amount r0.claimed into r1 as Prediction.record;
+    async reveal_prediction r0.pool_id r0.id r0.option r0.amount into r2;
+    output r1 as Prediction.record;
+    output r2 as manifoldpredictionv4.aleo/reveal_prediction.future;
+
+finalize reveal_prediction:
+    input r0 as field.public;
+    input r1 as field.public;
     input r2 as u64.public;
     input r3 as u64.public;
-    input r4 as u64.public;
-    input r5 as u64.public;
-    contains pools[r0] into r6;
-    assert.eq r6 true;
-    get pools[r0] into r7;
-    assert.eq r7.status 0u8;
-    cast block.timestamp into r8 as u64;
-    gt r7.deadline r8 into r9;
-    assert.eq r9 true;
-    add r7.total_staked r2 into r10;
-    add r7.option_a_stakes r4 into r11;
-    add r7.option_b_stakes r5 into r12;
-    cast r7.id r7.title r7.description r7.options r7.deadline r7.status r7.winning_option r10 r11 r12 r7.total_no_of_stakes r7.total_no_of_stakes_option_a r7.total_no_of_stakes_option_b into r13 as Pool;
-    set r13 into pools[r0];
-    get total_predictions[r0] into r14;
-    add r14 1u64 into r15;
-    set r15 into total_predictions[r0];
+    get commitments[r1] into r4;
+    assert.eq r4 r0;
+    assert.neq r4 0field;
+    get pools[r0] into r5;
+    assert.eq r5.status 1u8;
+    is.eq r2 1u64 into r6;
+    is.eq r2 2u64 into r7;
+    or r6 r7 into r8;
+    assert.eq r8 true;
+    add r5.option_a_stakes r3 into r9;
+    ternary r6 r9 r5.option_a_stakes into r10;
+    add r5.option_b_stakes r3 into r11;
+    ternary r7 r11 r5.option_b_stakes into r12;
+    add r5.total_staked r3 into r13;
+    cast r5.id r5.title r5.description r5.options r5.deadline r5.status r5.winning_option r13 r10 r12 r5.total_no_of_stakes r5.total_no_of_stakes_option_a r5.total_no_of_stakes_option_b into r14 as Pool;
+    set r14 into pools[r0];
+    set 0field into commitments[r1];
 
 function check_prediction:
     input r0 as Prediction.record;
     async check_prediction r0.pool_id r0.option into r1;
-    output r1 as manifoldpredictionv2.aleo/check_prediction.future;
+    output r1 as manifoldpredictionv4.aleo/check_prediction.future;
 
 finalize check_prediction:
     input r0 as field.public;
@@ -208,7 +235,7 @@ function collect_winnings:
     output r19 as Prediction.record;
     output r20 as credits.aleo/credits.record;
     output r21 as credits.aleo/credits.record;
-    output r22 as manifoldpredictionv2.aleo/collect_winnings.future;
+    output r22 as manifoldpredictionv4.aleo/collect_winnings.future;
 
 finalize collect_winnings:
     input r0 as field.public;
@@ -226,6 +253,8 @@ finalize collect_winnings:
     assert.eq r8.total_staked r4;
     assert.eq r8.option_a_stakes r5;
     assert.eq r8.option_b_stakes r6;
+    get commitments[r1] into r9;
+    assert.eq r9 0field;
 
 constructor:
     assert.eq program_owner aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;

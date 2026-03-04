@@ -4,7 +4,44 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
-## [Unreleased] - 2026-03-03
+## [Unreleased] - 2026-03-04
+
+### Added
+- **Trustless On-Chain Commit-Reveal** — Replaced admin-controlled stake reveal with user-driven on-chain commit-reveal. Each user reveals their own prediction after the pool locks, eliminating Oracle trust for stake aggregation.
+  - New `reveal_prediction()` user-callable transition — consumes a Prediction record to prove authenticity, accumulates stakes on-chain trustlessly
+  - Reveal check in `collect_winnings()` — unrevealed predictions cannot claim winnings (`commitments[id] must == 0field`)
+  - `reveal_window_end` column on markets table — tracks when users' reveal window expires
+  - `setRevealWindowEnd()` / `getMarketsReadyForResolution()` DB functions for reveal window timing
+  - New `use-reveal-prediction` React hook — fetches user's Prediction records, submits `reveal_prediction` transactions
+  - Reveal Window UI in trading panel — countdown timer, reveal buttons for each prediction, transaction status
+  - Reveal Window badges in market cards and featured market carousel (violet theme)
+  - Three-state UI: Blind Betting → Reveal Window → Odds Revealed
+
+### Changed
+- Renamed program from `manifoldpredictionv3.aleo` to `manifoldpredictionv4.aleo`
+- **Removed** `reveal_pool_stakes()` admin-only transition (centralized trust)
+- **Removed** `revealPoolStakes()` from Oracle worker (no admin reveal step)
+- **Removed** `REVEAL_POOL_FEE` config, `markStakesRevealed()`, `getLockedUnrevealedMarkets()`, `getLockedRevealedMarkets()` (all admin-reveal artifacts)
+- Worker flow changed from `sync → create → lock → reveal → resolve` to `sync → create → lock (+ set reveal window) → resolve (after window ends)`
+- `markets` table: replaced `stakes_revealed BOOLEAN` with `reveal_window_end BIGINT`
+- Market conversion (`apiMarketToMarket`) now derives `oddsRevealed` and `isInRevealWindow` from `reveal_window_end` timestamp
+- `Market` type gains `isInRevealWindow` and `revealWindowEnd` fields
+- On-chain sync guard updated to use reveal window timing instead of `stakes_revealed` flag
+- All PROGRAM_ID references updated to `manifoldpredictionv4.aleo` across frontend
+
+### Documentation
+- Updated `docs/PRIVACY_MODEL.md` — replaced admin-reveal architecture with trustless commit-reveal, added comparison table, updated pool lifecycle and security considerations
+
+### Previous (v3): Blind Betting Foundation
+- `commitments` mapping on-chain to prevent double-betting
+- Oracle `predictions` table for off-chain prediction tracking
+- `POST /predictions` API endpoint for frontend reporting
+- Frontend shows "Blind Betting Active", hidden odds, and lock icons during betting phase
+- `finalize_predict()` does not publish `amount`, `option`, or stake totals on-chain
+
+---
+
+## [1.0.0] - 2026-03-03
 
 ### Fixed
 - **Transaction execution broken** - Transactions were showing "submitted" but never hitting the chain. Root causes:

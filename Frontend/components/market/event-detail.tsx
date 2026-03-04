@@ -178,6 +178,7 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
             activities={activities}
             yesPrice={market.yesPrice}
             noPrice={market.noPrice}
+            oddsRevealed={market.oddsRevealed}
           />
         </div>
 
@@ -344,11 +345,13 @@ function SocialProofBar({
   activities,
   yesPrice,
   noPrice,
+  oddsRevealed,
 }: {
   traderCount: number;
   activities: Activity[];
   yesPrice: number;
   noPrice: number;
+  oddsRevealed: boolean;
 }) {
   const totalSentiment = yesPrice + noPrice;
   const bullishPct = totalSentiment > 0 ? (yesPrice / totalSentiment) * 100 : 50;
@@ -384,14 +387,20 @@ function SocialProofBar({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-[hsl(230,10%,45%)]">Market Sentiment</span>
-            <span className="text-xs font-mono text-white">{bullishPct.toFixed(0)}% Bullish</span>
+            {oddsRevealed ? (
+              <span className="text-xs font-mono text-white">{bullishPct.toFixed(0)}% Bullish</span>
+            ) : (
+              <span className="text-xs font-mono text-amber-400/70">Hidden</span>
+            )}
           </div>
           <div className="relative h-3 bg-[hsl(230,15%,12%)] rounded-full overflow-hidden">
             <div
               className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
               style={{
-                width: `${bullishPct}%`,
-                background: 'linear-gradient(90deg, #22c55e, #4ade80)',
+                width: oddsRevealed ? `${bullishPct}%` : '50%',
+                background: oddsRevealed
+                  ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+                  : 'linear-gradient(90deg, #78716c, #a8a29e)',
               }}
             />
           </div>

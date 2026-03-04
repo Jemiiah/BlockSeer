@@ -8,7 +8,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 // The Oracle hashes string titles while the contract hashes field values,
 // so IDs diverge. This mapping bridges them for markets deployed on-chain.
 const POOL_ID_OVERRIDES: Record<string, string> = {
-  // "Test-Prediction-Market" Oracle ID → manifoldpredictionv2.aleo on-chain pool ID
+  // "Test-Prediction-Market" Oracle ID → manifoldpredictionv3.aleo on-chain pool ID
   '31576401999306672833621161106305244191113734632727924field':
     '6511715996739103003044919780246594659129815625196693239225108113980664847959field',
 };

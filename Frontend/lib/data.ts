@@ -16,6 +16,9 @@ export const markets: Market[] = [
     description: 'Will the U.S. Securities and Exchange Commission approve a spot Ethereum ETF by the end of Q1 2026?',
     resolution: "This market will resolve to 'Yes' if the SEC approves at least one spot Ethereum ETF for trading on a U.S. exchange by March 31, 2026, 11:59 PM ET.",
     history: [45, 48, 52, 49, 55, 58, 62, 59, 63, 67],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '2',
@@ -32,6 +35,9 @@ export const markets: Market[] = [
     description: "Will the total value locked in Aleo's DeFi ecosystem exceed $500 million USD?",
     resolution: "This market resolves to 'Yes' if DefiLlama reports Aleo TVL above $500M at any point before June 30, 2026.",
     history: [55, 52, 48, 50, 46, 44, 45, 43, 44, 42],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '3',
@@ -48,6 +54,9 @@ export const markets: Market[] = [
     description: 'Will Bitcoin reach a price of $150,000 USD or higher at any point during 2026?',
     resolution: "Resolves 'Yes' if BTC/USD reaches $150,000 on Coinbase, Binance, or Kraken before December 31, 2026.",
     history: [32, 35, 33, 36, 38, 35, 37, 36, 37, 38],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '4',
@@ -64,6 +73,9 @@ export const markets: Market[] = [
     description: 'Will Solana maintain 100% uptime with no network outages exceeding 1 hour in Q1 2026?',
     resolution: "Resolves 'Yes' if Solana has no documented network outages lasting more than 60 minutes between Jan 1 and Mar 31, 2026.",
     history: [50, 51, 52, 53, 52, 54, 53, 54, 53, 54],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '5',
@@ -80,6 +92,9 @@ export const markets: Market[] = [
     description: 'Will Matter Labs launch the ZK token and conduct an airdrop to users before April 2026?',
     resolution: "This market resolves 'Yes' if the ZK token is officially launched and tradeable on major exchanges by April 1, 2026.",
     history: [62, 65, 68, 70, 72, 71, 74, 76, 77, 78],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '6',
@@ -96,6 +111,9 @@ export const markets: Market[] = [
     description: 'Will Uniswap v4 be deployed on Ethereum mainnet by the end of Q1 2026?',
     resolution: "Resolves 'Yes' if Uniswap v4 contracts are deployed and functional on Ethereum mainnet by March 31, 2026.",
     history: [75, 77, 78, 80, 81, 82, 83, 84, 84, 85],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '7',
@@ -112,6 +130,9 @@ export const markets: Market[] = [
     description: 'Will Aleo achieve sub-second zero-knowledge proof generation for standard transactions?',
     resolution: "Resolves 'Yes' if Aleo demonstrates sub-1-second proof generation in a public benchmark by June 30, 2026.",
     history: [48, 50, 52, 54, 55, 57, 58, 59, 60, 61],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '8',
@@ -128,6 +149,9 @@ export const markets: Market[] = [
     description: 'Will the Ethereum staking APY drop below 3% at any point in Q2 2026?',
     resolution: "Resolves 'Yes' if the average ETH staking rate on Lido falls below 3% for at least 7 consecutive days.",
     history: [35, 34, 33, 32, 31, 30, 31, 30, 29, 29],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
   {
     id: '9',
@@ -144,6 +168,9 @@ export const markets: Market[] = [
     description: 'Will Base overtake Arbitrum to become the largest L2 by total value locked?',
     resolution: "Resolves 'Yes' if Base TVL exceeds Arbitrum TVL according to L2Beat for at least 24 hours before June 30, 2026.",
     history: [38, 40, 42, 44, 45, 47, 48, 50, 51, 52],
+    oddsRevealed: true,
+    isInRevealWindow: false,
+    revealWindowEnd: null,
   },
 ];
 

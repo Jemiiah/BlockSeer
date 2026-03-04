@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { TrendingUp, TrendingDown, Clock, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, DollarSign, Lock, Timer } from 'lucide-react';
 import { Market } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -89,20 +89,34 @@ export function MarketCard({ market, index = 0 }: MarketCardProps) {
 
         {/* Outcome Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <button
-            className="rounded-full py-2 px-3 border border-blue-500/30 bg-blue-500/[0.08] text-center"
-            onClick={(e) => e.preventDefault()}
-          >
-            <div className="text-[10px] text-blue-400/70 mb-0.5">Yes</div>
-            <div className="text-sm font-bold text-blue-400">{market.yesPrice}¢</div>
-          </button>
-          <button
-            className="rounded-full py-2 px-3 border border-white/[0.08] bg-white/[0.04] text-center"
-            onClick={(e) => e.preventDefault()}
-          >
-            <div className="text-[10px] text-white/40 mb-0.5">No</div>
-            <div className="text-sm font-bold text-white/70">{market.noPrice}¢</div>
-          </button>
+          {market.oddsRevealed ? (
+            <>
+              <button
+                className="rounded-full py-2 px-3 border border-blue-500/30 bg-blue-500/[0.08] text-center"
+                onClick={(e) => e.preventDefault()}
+              >
+                <div className="text-[10px] text-blue-400/70 mb-0.5">Yes</div>
+                <div className="text-sm font-bold text-blue-400">{market.yesPrice}¢</div>
+              </button>
+              <button
+                className="rounded-full py-2 px-3 border border-white/[0.08] bg-white/[0.04] text-center"
+                onClick={(e) => e.preventDefault()}
+              >
+                <div className="text-[10px] text-white/40 mb-0.5">No</div>
+                <div className="text-sm font-bold text-white/70">{market.noPrice}¢</div>
+              </button>
+            </>
+          ) : market.isInRevealWindow ? (
+            <div className="col-span-2 flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-violet-500/20 bg-violet-500/[0.06] text-violet-400 text-xs font-medium">
+              <Timer className="w-3 h-3" />
+              Reveal window open
+            </div>
+          ) : (
+            <div className="col-span-2 flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-amber-500/20 bg-amber-500/[0.06] text-amber-400 text-xs font-medium">
+              <Lock className="w-3 h-3" />
+              Odds revealed at deadline
+            </div>
+          )}
         </div>
 
         {/* Footer */}

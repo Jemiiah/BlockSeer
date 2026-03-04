@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Market, OutcomeType } from '@/types';
 import { cn, calculateOrderSummary, calculateOdds } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,10 @@ import { usePrediction } from '@/hooks/use-prediction';
 import { useOnChainPool } from '@/hooks/use-on-chain-pool';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui';
-import { Loader2, BarChart3, ArrowDownToLine, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Loader2, BarChart3, ArrowDownToLine, AlertTriangle, RefreshCw, Lock, Eye, Timer } from 'lucide-react';
+import { useRevealPrediction } from '@/hooks/use-reveal-prediction';
 
-const PROGRAM_ID = 'manifoldpredictionv2.aleo';
+const PROGRAM_ID = 'manifoldpredictionv4.aleo';
 const ADMIN_ADDRESS = 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 const CREATE_POOL_FEE = 2_000_000; // 2 ALEO in microcredits
 
@@ -31,6 +32,35 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const { setVisible: setWalletModalVisible } = useWalletModal();
   const { makePrediction, isLoading, error } = usePrediction();
   const { pool: onChainPool, totalPredictions, isLoading: poolLoading } = useOnChainPool(market.id);
+  const {
+    getPredictionsForPool,
+    revealPrediction,
+    isRevealing,
+    revealingId,
+    txMessage: revealTxMessage,
+  } = useRevealPrediction();
+
+  // Reveal window countdown
+  const [revealCountdown, setRevealCountdown] = useState<string>('');
+  useEffect(() => {
+    if (!market.isInRevealWindow || !market.revealWindowEnd) return;
+    const tick = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = market.revealWindowEnd! - now;
+      if (remaining <= 0) {
+        setRevealCountdown('Ended');
+        return;
+      }
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      setRevealCountdown(`${mins}m ${secs.toString().padStart(2, '0')}s`);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [market.isInRevealWindow, market.revealWindowEnd]);
+
+  const poolPredictions = getPredictionsForPool(market.id);
 
   const handleConnectWallet = () => {
     setWalletModalVisible(true);
@@ -200,20 +230,34 @@ export function TradingPanel({ market }: TradingPanelProps) {
         <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4 mb-6 space-y-2">
           <div className="flex items-center gap-2 text-xs font-medium text-[hsl(230,10%,50%)] mb-2">
             <BarChart3 className="w-3.5 h-3.5" />
-            Pool Stats (On-Chain)
+            Pool Stats {market.oddsRevealed ? '(On-Chain)' : market.isInRevealWindow ? '(Reveal Window)' : '(Blind Betting)'}
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-[hsl(230,10%,40%)]">Total Staked</span>
-            <span className="text-white/80 font-medium">{(onChainPool.total_staked / 1_000_000).toFixed(2)} ALEO</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-[hsl(230,10%,40%)]">Yes Pool</span>
-            <span className="text-blue-400 font-medium">{(onChainPool.option_a_stakes / 1_000_000).toFixed(2)} ALEO</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-[hsl(230,10%,40%)]">No Pool</span>
-            <span className="text-white/60 font-medium">{(onChainPool.option_b_stakes / 1_000_000).toFixed(2)} ALEO</span>
-          </div>
+          {market.oddsRevealed ? (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-[hsl(230,10%,40%)]">Total Staked</span>
+                <span className="text-white/80 font-medium">{(onChainPool.total_staked / 1_000_000).toFixed(2)} ALEO</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[hsl(230,10%,40%)]">Yes Pool</span>
+                <span className="text-blue-400 font-medium">{(onChainPool.option_a_stakes / 1_000_000).toFixed(2)} ALEO</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[hsl(230,10%,40%)]">No Pool</span>
+                <span className="text-white/60 font-medium">{(onChainPool.option_b_stakes / 1_000_000).toFixed(2)} ALEO</span>
+              </div>
+            </>
+          ) : market.isInRevealWindow ? (
+            <div className="flex items-center gap-2 text-sm text-violet-400/80 py-2">
+              <Timer className="w-3.5 h-3.5" />
+              <span>Reveals in progress — {revealCountdown} remaining</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-amber-400/80 py-2">
+              <Lock className="w-3.5 h-3.5" />
+              <span>Stakes hidden until deadline</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-[hsl(230,10%,40%)]">Predictions</span>
             <span className="text-white/80 font-medium">{totalPredictions}</span>
@@ -228,12 +272,14 @@ export function TradingPanel({ market }: TradingPanelProps) {
           price={market.yesPrice}
           isSelected={selectedOutcome === 'yes'}
           onClick={() => setSelectedOutcome('yes')}
+          hidden={!market.oddsRevealed}
         />
         <OutcomeButton
           type="no"
           price={market.noPrice}
           isSelected={selectedOutcome === 'no'}
           onClick={() => setSelectedOutcome('no')}
+          hidden={!market.oddsRevealed}
         />
       </div>
 
@@ -267,28 +313,37 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
       {/* Order Summary */}
       <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4 mb-6 space-y-3">
-        <div className="flex justify-between text-sm">
-          <span className="text-[hsl(230,10%,40%)]">Odds</span>
-          <span className="text-white/80 font-medium">{orderSummary.odds}x</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-[hsl(230,10%,40%)]">Implied Probability</span>
-          <span className="text-white/80 font-medium">{orderSummary.avgPrice}%</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-[hsl(230,10%,40%)]">Shares</span>
-          <span className="text-white/80 font-medium">{orderSummary.shares}</span>
-        </div>
-        <div className="border-t border-white/[0.06] pt-3 space-y-2">
-          <div className="flex justify-between">
-            <span className="text-[hsl(230,10%,50%)]">Potential Return</span>
-            <span className="text-emerald-400 font-semibold">{orderSummary.potentialReturn} ALEO</span>
+        {market.oddsRevealed ? (
+          <>
+            <div className="flex justify-between text-sm">
+              <span className="text-[hsl(230,10%,40%)]">Odds</span>
+              <span className="text-white/80 font-medium">{orderSummary.odds}x</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-[hsl(230,10%,40%)]">Implied Probability</span>
+              <span className="text-white/80 font-medium">{orderSummary.avgPrice}%</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-[hsl(230,10%,40%)]">Shares</span>
+              <span className="text-white/80 font-medium">{orderSummary.shares}</span>
+            </div>
+            <div className="border-t border-white/[0.06] pt-3 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-[hsl(230,10%,50%)]">Potential Return</span>
+                <span className="text-emerald-400 font-semibold">{orderSummary.potentialReturn} ALEO</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[hsl(230,10%,40%)]">Profit</span>
+                <span className="text-emerald-400/80 font-medium">+{orderSummary.profit} ALEO</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-[hsl(230,10%,50%)] py-2">
+            <Lock className="w-3.5 h-3.5" />
+            <span>Returns calculated after deadline</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-[hsl(230,10%,40%)]">Profit</span>
-            <span className="text-emerald-400/80 font-medium">+{orderSummary.profit} ALEO</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Transaction Status */}
@@ -321,6 +376,48 @@ export function TradingPanel({ market }: TradingPanelProps) {
               )}
               Convert {amount || '5'} ALEO to Private
             </button>
+          )}
+        </div>
+      )}
+
+      {/* Reveal Window Banner */}
+      {market.isInRevealWindow && (
+        <div className="mb-4 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Timer className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-semibold text-violet-400">Reveal Window Open</span>
+            <span className="ml-auto text-xs font-mono text-violet-400/80">{revealCountdown}</span>
+          </div>
+          <p className="text-xs text-violet-400/60 mb-3">
+            Reveal your predictions to claim winnings after resolution. Unrevealed predictions forfeit rewards.
+          </p>
+          {poolPredictions.length > 0 ? (
+            <div className="space-y-2">
+              {poolPredictions.map((pred) => (
+                <button
+                  key={pred.id}
+                  onClick={() => revealPrediction(pred)}
+                  disabled={isRevealing}
+                  className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 text-sm font-medium border border-violet-500/20 transition-colors disabled:opacity-50"
+                >
+                  <span className="flex items-center gap-2">
+                    {isRevealing && revealingId === pred.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    Reveal: {pred.option === 1 ? 'Yes' : 'No'} — {(pred.amount / 1_000_000).toFixed(2)} ALEO
+                  </span>
+                </button>
+              ))}
+              {revealTxMessage && (
+                <p className="text-xs text-violet-400/70 mt-1">{revealTxMessage}</p>
+              )}
+            </div>
+          ) : connected ? (
+            <p className="text-xs text-violet-400/50">No predictions found for this pool in your wallet.</p>
+          ) : (
+            <p className="text-xs text-violet-400/50">Connect wallet to reveal predictions.</p>
           )}
         </div>
       )}
@@ -395,9 +492,10 @@ interface OutcomeButtonProps {
   price: number;
   isSelected: boolean;
   onClick: () => void;
+  hidden?: boolean;
 }
 
-function OutcomeButton({ type, price, isSelected, onClick }: OutcomeButtonProps) {
+function OutcomeButton({ type, price, isSelected, onClick, hidden }: OutcomeButtonProps) {
   const isYes = type === 'yes';
 
   return (
@@ -413,7 +511,7 @@ function OutcomeButton({ type, price, isSelected, onClick }: OutcomeButtonProps)
       )}
     >
       <div className="text-xs opacity-70 mb-1">Buy {isYes ? 'Yes' : 'No'}</div>
-      <div className="text-xl">{price}¢</div>
+      <div className="text-xl">{hidden ? '--' : `${price}¢`}</div>
     </button>
   );
 }

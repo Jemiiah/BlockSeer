@@ -32,11 +32,16 @@ app.use(cors({
 
 app.use(express.json());
 
-// Get all markets
+// Get all markets (includes reveal_window_end for commit-reveal UX)
 app.get("/markets", async (req, res) => {
     try {
         const markets = await db.getAllMarkets();
-        res.json(markets);
+        // Ensure reveal_window_end is included as a number (or null)
+        const enriched = markets.map((m: any) => ({
+            ...m,
+            reveal_window_end: m.reveal_window_end ? parseInt(m.reveal_window_end, 10) : null,
+        }));
+        res.json(enriched);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -197,6 +202,57 @@ app.post("/markets/:id/lock", async (req, res) => {
         });
     } catch (error: any) {
         console.error("Error locking market:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Report a prediction (blind betting — frontend reports predictions off-chain)
+app.post("/predictions", async (req, res) => {
+    try {
+        const { prediction_id, market_id, option, amount, tx_id } = req.body;
+
+        // Validate required fields
+        if (!prediction_id || !market_id || !option || !amount) {
+            return res.status(400).json({
+                error: "Missing required fields: prediction_id, market_id, option, amount"
+            });
+        }
+
+        if (option !== 1 && option !== 2) {
+            return res.status(400).json({ error: "option must be 1 or 2" });
+        }
+
+        if (typeof amount !== 'number' || amount <= 0) {
+            return res.status(400).json({ error: "amount must be a positive number" });
+        }
+
+        // Validate market exists and is pending
+        const market = await db.getMarketById(market_id);
+        if (!market) {
+            return res.status(404).json({ error: "Market not found" });
+        }
+
+        if (market.status !== 'pending') {
+            return res.status(400).json({
+                error: `Market is not accepting predictions. Current status: ${market.status}`
+            });
+        }
+
+        // Check for duplicate prediction ID
+        const exists = await db.predictionExists(prediction_id);
+        if (exists) {
+            return res.status(409).json({ error: "Prediction already reported" });
+        }
+
+        await db.addPrediction(prediction_id, market_id, option, amount, tx_id || null);
+
+        res.status(201).json({
+            success: true,
+            prediction_id,
+            message: "Prediction recorded"
+        });
+    } catch (error: any) {
+        console.error("Error recording prediction:", error);
         res.status(500).json({ error: error.message });
     }
 });

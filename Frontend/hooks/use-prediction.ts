@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
 // Program ID from the deployed Leo program
-const PROGRAM_ID = 'manifoldpredictionv2.aleo';
+const PROGRAM_ID = 'manifoldpredictionv4.aleo';
 
 // Default pool ID
 const DEFAULT_POOL_ID = '1field';
@@ -282,6 +282,24 @@ export function usePrediction() {
         const finalTxId = txResult.onChainId || tempTxId;
         setTransactionId(finalTxId);
         setIsLoading(false);
+
+        // Report prediction to Oracle (non-blocking — failure doesn't break the prediction)
+        try {
+          await fetch('/api/predictions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prediction_id: finalTxId,
+              market_id: formattedPoolId,
+              option,
+              amount: amountInMicrocredits,
+              tx_id: finalTxId,
+            }),
+          });
+          console.log('Prediction reported to Oracle');
+        } catch (reportErr) {
+          console.warn('Failed to report prediction to Oracle (non-fatal):', reportErr);
+        }
 
         return {
           transactionId: finalTxId,
