@@ -40,7 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AleoWalletProvider
         wallets={wallets}
-        decryptPermission={WalletDecryptPermission.UponRequest}
+        decryptPermission={WalletDecryptPermission.OnChainHistory}
         network={Network.TESTNET}
         programs={[PROGRAM_ID, CREDITS_PROGRAM]}
         autoConnect

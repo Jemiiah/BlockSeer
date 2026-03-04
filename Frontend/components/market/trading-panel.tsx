@@ -8,7 +8,7 @@ import { usePrediction } from '@/hooks/use-prediction';
 import { useOnChainPool } from '@/hooks/use-on-chain-pool';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui';
-import { Loader2, BarChart3 } from 'lucide-react';
+import { Loader2, BarChart3, ArrowDownToLine } from 'lucide-react';
 
 interface TradingPanelProps {
   market: Market;
@@ -20,7 +20,9 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [txMessage, setTxMessage] = useState<string>('');
 
-  const { connected, address, connecting } = useWallet();
+  const [isConverting, setIsConverting] = useState(false);
+
+  const { connected, address, connecting, executeTransaction } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
   const { makePrediction, isLoading, error } = usePrediction();
   const { pool: onChainPool, totalPredictions, isLoading: poolLoading } = useOnChainPool(market.id);
@@ -28,6 +30,47 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const handleConnectWallet = () => {
     setWalletModalVisible(true);
   };
+
+  // Convert public credits to a private record so the user can trade
+  const handleConvertToPrivate = async () => {
+    if (!connected || !address || !executeTransaction) return;
+
+    const convertAmount = amount ? parseFloat(amount) : 5;
+    const microcredits = Math.floor(convertAmount * 1_000_000);
+
+    setIsConverting(true);
+    setTxStatus('pending');
+    setTxMessage(`Converting ${convertAmount} ALEO from public to private...`);
+
+    try {
+      const result = await executeTransaction({
+        program: 'credits.aleo',
+        function: 'transfer_public_to_private',
+        inputs: [address, `${microcredits}u64`],
+        fee: 300_000,
+        privateFee: false,
+      });
+
+      const txId = typeof result === 'string' ? result : result?.transactionId;
+      if (txId) {
+        setTxStatus('success');
+        setTxMessage(
+          `Conversion submitted (TX: ${txId.slice(0, 16)}...). ` +
+          `Wait ~30s for confirmation, then try your prediction again.`
+        );
+      } else {
+        setTxStatus('error');
+        setTxMessage('Conversion failed — wallet did not return a transaction ID.');
+      }
+    } catch (e) {
+      setTxStatus('error');
+      setTxMessage(e instanceof Error ? e.message : 'Failed to convert credits');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const showConvertButton = txStatus === 'error' && txMessage.includes('private credits balance');
 
   // Compute on-chain stakes for odds calculation
   const onChainStakes = onChainPool
@@ -209,6 +252,20 @@ export function TradingPanel({ market }: TradingPanelProps) {
             </span>
           )}
           {txStatus !== 'pending' && txMessage}
+          {showConvertButton && (
+            <button
+              onClick={handleConvertToPrivate}
+              disabled={isConverting}
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-sm font-medium border border-blue-500/20 transition-colors disabled:opacity-50"
+            >
+              {isConverting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowDownToLine className="h-4 w-4" />
+              )}
+              Convert {amount || '5'} ALEO to Private
+            </button>
+          )}
         </div>
       )}
 
