@@ -1,0 +1,148 @@
+{
+  "type": "deploy",
+  "id": "at1kawc2z7s8q5dp8vxn3al92wlnjcwhnqx9eapa05du8k40snepy8qtnj3pw",
+  "owner": {
+    "address": "aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd",
+    "signature": "sign1av3euplwuujr5m53edu7fye7at5zyn6udq2ycfz80v7l7rkqtgqj36yqc8w4sp5f4wp8dyrm7u5mlwzxm0nks8pshfqtz60e4nchcqx3du9y2l40zdv22eytca2szmt0gzf6l0jrc2g3cr52zhd3ghh6pe52vry826praklw0wwrsrcsskv6afsq8ja23qrkq8f5u0qhr6fqx5nd6zw"
+  },
+  "deployment": {
+    "edition": 0,
+    "program": "import credits.aleo;\n\nprogram manifoldpredictionv4.aleo;\n\nrecord Prediction:\n    owner as address.private;\n    id as field.private;\n    pool_id as field.private;\n    option as u64.private;\n    amount as u64.private;\n    claimed as boolean.private;\n\nstruct Pool:\n    id as field;\n    title as field;\n    description as field;\n    options as [field; 2u32];\n    deadline as u64;\n    status as u8;\n    winning_option as u64;\n    total_staked as u64;\n    option_a_stakes as u64;\n    option_b_stakes as u64;\n    total_no_of_stakes as u64;\n    total_no_of_stakes_option_a as u64;\n    total_no_of_stakes_option_b as u64;\n\nstruct Default:\n    id as u32;\n\nmapping pools:\n    key as field.public;\n    value as Pool.public;\n\nmapping total_predictions:\n    key as field.public;\n    value as u64.public;\n\nmapping commitments:\n    key as field.public;\n    value as field.public;\n\nmapping pools_id__:\n    key as u32.public;\n    value as field.public;\n\nmapping pools_id__len__:\n    key as boolean.public;\n    value as u32.public;\n\nmapping user_predictions__:\n    key as u32.public;\n    value as field.public;\n\nmapping user_predictions__len__:\n    key as boolean.public;\n    value as u32.public;\n\nfunction initialize:\n    async initialize self.caller into r0;\n    output r0 as manifoldpredictionv4.aleo/initialize.future;\n\nfinalize initialize:\n    input r0 as address.public;\n    assert.eq true true;\n\nfunction main:\n\nfunction create_pool:\n    input r0 as field.public;\n    input r1 as field.public;\n    input r2 as [field; 2u32].public;\n    input r3 as u64.public;\n    hash.bhp256 r0 into r4 as field;\n    assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;\n    cast r4 r0 r1 r2 r3 0u8 0u64 0u64 0u64 0u64 0u64 0u64 0u64 into r5 as Pool;\n    async create_pool r4 r5 into r6;\n    output r5 as Pool.private;\n    output r6 as manifoldpredictionv4.aleo/create_pool.future;\n\nfinalize create_pool:\n    input r0 as field.public;\n    input r1 as Pool.public;\n    set 0u64 into total_predictions[r0];\n    set r1 into pools[r0];\n    get.or_use pools_id__len__[false] 0u32 into r2;\n    add r2 1u32 into r3;\n    set r3 into pools_id__len__[false];\n    set r0 into pools_id__[r2];\n\nfunction lock_pool:\n    input r0 as field.public;\n    assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;\n    async lock_pool r0 into r1;\n    output r1 as manifoldpredictionv4.aleo/lock_pool.future;\n\nfinalize lock_pool:\n    input r0 as field.public;\n    get pools[r0] into r1;\n    cast r1.id r1.title r1.description r1.options r1.deadline 1u8 r1.winning_option r1.total_staked r1.option_a_stakes r1.option_b_stakes r1.total_no_of_stakes r1.total_no_of_stakes_option_a r1.total_no_of_stakes_option_b into r2 as Pool;\n    set r2 into pools[r0];\n\nfunction resolve_pool:\n    input r0 as field.public;\n    input r1 as u64.public;\n    assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;\n    async resolve_pool r0 r1 into r2;\n    output r2 as manifoldpredictionv4.aleo/resolve_pool.future;\n\nfinalize resolve_pool:\n    input r0 as field.public;\n    input r1 as u64.public;\n    get pools[r0] into r2;\n    cast r2.id r2.title r2.description r2.options r2.deadline 2u8 r1 r2.total_staked r2.option_a_stakes r2.option_b_stakes r2.total_no_of_stakes r2.total_no_of_stakes_option_a r2.total_no_of_stakes_option_b into r3 as Pool;\n    set r3 into pools[r0];\n\nfunction predict:\n    input r0 as field.private;\n    input r1 as u64.private;\n    input r2 as u64.private;\n    input r3 as u64.private;\n    input r4 as credits.aleo/credits.record;\n    is.eq r1 1u64 into r5;\n    is.eq r1 2u64 into r6;\n    or r5 r6 into r7;\n    assert.eq r7 true;\n    assert.neq r2 0u64;\n    hash.bhp256 r3 into r8 as field;\n    cast self.caller r8 r0 r1 r2 false into r9 as Prediction.record;\n    call credits.aleo/transfer_private r4 aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd r2 into r10 r11;\n    async predict r0 r8 into r12;\n    output r9 as Prediction.record;\n    output r10 as credits.aleo/credits.record;\n    output r11 as credits.aleo/credits.record;\n    output r12 as manifoldpredictionv4.aleo/predict.future;\n\nfinalize predict:\n    input r0 as field.public;\n    input r1 as field.public;\n    contains pools[r0] into r2;\n    assert.eq r2 true;\n    get pools[r0] into r3;\n    assert.eq r3.status 0u8;\n    cast block.timestamp into r4 as u64;\n    gt r3.deadline r4 into r5;\n    assert.eq r5 true;\n    contains commitments[r1] into r6;\n    not r6 into r7;\n    assert.eq r7 true;\n    set r0 into commitments[r1];\n    get total_predictions[r0] into r8;\n    add r8 1u64 into r9;\n    set r9 into total_predictions[r0];\n\nfunction reveal_prediction:\n    input r0 as Prediction.record;\n    cast r0.owner r0.id r0.pool_id r0.option r0.amount r0.claimed into r1 as Prediction.record;\n    async reveal_prediction r0.pool_id r0.id r0.option r0.amount into r2;\n    output r1 as Prediction.record;\n    output r2 as manifoldpredictionv4.aleo/reveal_prediction.future;\n\nfinalize reveal_prediction:\n    input r0 as field.public;\n    input r1 as field.public;\n    input r2 as u64.public;\n    input r3 as u64.public;\n    get commitments[r1] into r4;\n    assert.eq r4 r0;\n    assert.neq r4 0field;\n    get pools[r0] into r5;\n    assert.eq r5.status 1u8;\n    is.eq r2 1u64 into r6;\n    is.eq r2 2u64 into r7;\n    or r6 r7 into r8;\n    assert.eq r8 true;\n    add r5.option_a_stakes r3 into r9;\n    ternary r6 r9 r5.option_a_stakes into r10;\n    add r5.option_b_stakes r3 into r11;\n    ternary r7 r11 r5.option_b_stakes into r12;\n    add r5.total_staked r3 into r13;\n    cast r5.id r5.title r5.description r5.options r5.deadline r5.status r5.winning_option r13 r10 r12 r5.total_no_of_stakes r5.total_no_of_stakes_option_a r5.total_no_of_stakes_option_b into r14 as Pool;\n    set r14 into pools[r0];\n    set 0field into commitments[r1];\n\nfunction check_prediction:\n    input r0 as Prediction.record;\n    async check_prediction r0.pool_id r0.option into r1;\n    output r1 as manifoldpredictionv4.aleo/check_prediction.future;\n\nfinalize check_prediction:\n    input r0 as field.public;\n    input r1 as u64.public;\n    contains pools[r0] into r2;\n    assert.eq r2 true;\n    get pools[r0] into r3;\n    assert.eq r3.status 2u8;\n    assert.eq r3.winning_option r1;\n\nclosure calculate_winnings:\n    input r0 as u64;\n    input r1 as u64;\n    input r2 as u64;\n    is.eq r2 0u64 into r3;\n    mul r0 r1 into r4;\n    div r4 r2 into r5;\n    ternary r3 0u64 r5 into r6;\n    output r6 as u64;\n\nfunction collect_winnings:\n    input r0 as u64.private;\n    input r1 as u64.private;\n    input r2 as u64.private;\n    input r3 as u64.private;\n    input r4 as credits.aleo/credits.record;\n    input r5 as Prediction.record;\n    assert.eq r0 r5.option;\n    assert.eq r5.claimed false;\n    is.eq r0 1u64 into r6;\n    gt r2 0u64 into r7;\n    not r6 into r8;\n    or r7 r8 into r9;\n    assert.eq r9 true;\n    call calculate_winnings r5.amount r1 r2 into r10;\n    is.eq r0 2u64 into r11;\n    gt r3 0u64 into r12;\n    and r8 r11 into r13;\n    not r13 into r14;\n    or r12 r14 into r15;\n    assert.eq r15 true;\n    call calculate_winnings r5.amount r1 r3 into r16;\n    ternary r11 r16 0u64 into r17;\n    ternary r6 r10 r17 into r18;\n    cast r5.owner r5.id r5.pool_id r5.option r18 true into r19 as Prediction.record;\n    call credits.aleo/transfer_private r4 r5.owner r18 into r20 r21;\n    async collect_winnings r5.pool_id r5.id r5.amount r0 r1 r2 r3 into r22;\n    output r19 as Prediction.record;\n    output r20 as credits.aleo/credits.record;\n    output r21 as credits.aleo/credits.record;\n    output r22 as manifoldpredictionv4.aleo/collect_winnings.future;\n\nfinalize collect_winnings:\n    input r0 as field.public;\n    input r1 as field.public;\n    input r2 as u64.public;\n    input r3 as u64.public;\n    input r4 as u64.public;\n    input r5 as u64.public;\n    input r6 as u64.public;\n    contains pools[r0] into r7;\n    assert.eq r7 true;\n    get pools[r0] into r8;\n    assert.eq r8.status 2u8;\n    assert.eq r8.winning_option r3;\n    assert.eq r8.total_staked r4;\n    assert.eq r8.option_a_stakes r5;\n    assert.eq r8.option_b_stakes r6;\n    get commitments[r1] into r9;\n    assert.eq r9 0field;\n\nconstructor:\n    assert.eq program_owner aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;\n",
+    "verifying_keys": [
+      [
+        "initialize",
+        [
+          "verifier1qygqqqqqqqqqqqq69gqqqqqqqqqqu2sqqqqqqqqqkatsqqqqqqqqpdnsqqqqqqqqqz4n5qqqqqqqqqqvqqqqqqqqqqq2fjle47xvm4dhzte8zzjj9e8p06cdgqhkpd42pfggzumfhzhjuf7h0xw9gxvl9p2qw6e5g0skzwupc0ejj38qjm7qdexcuaykk2dc9l8ctm6c7409zu2n8afvj7jsknaxz4d9aancrmwjtff9e8335yeqr7upteehah0sxe34peex62y89r3z9wjjgjxqtwa5rhn58ju86mkm0c5c9wrh7dfrvchj8dvqkmt5sqa3573dp3nqfzmgxkxymg3sry3ukskdr4duh44nukwn5elluq5awalcyflutd3537thgqmtr5upgqr3nu457k4vs926432wrmn7gfuhx0flpy8pcscrrzsq8d7x7jz6l4kpaygjhletwscnggdn7lssf6qep2a27wm9g472zhlhuhx3tnq86gy2f9cpml5fkrzeztvr7u3sz62qu06xnd29d7xew4junlg2ptgp2rerujv97lnf8ddtv6643amy5rudf8rpfn7r3eravv2jc5e0n79zv0xxydmydfp0gpupa9vrjycqqerahcx7ve08gk7ns5jalxt32532y6et8szwv68xazcn0sdfqanqqlsq5mwgwejdt9gz468lkqhsqp9t9494p4nrnxsgz88tlz408e8s5qjd3wq0ekf8wh47tfysyqv53usmd6j6psqahm07cq977rwl7qrl44msll64ku9sjpknfz5ft49t03p8n43zuczgpysmz3crwg4nxta96udguaevm88xx9a3l3d0pcqt5l4j4755a0mhwr7pr583vtu55fuk9wauv4xtqhfnjn5p6gg26g6z5fnsykwdkgqk6wrdwq709zqpqzg8czh3pqhg7ga3tqgv9l085yrwj6vap64lvle5yw5pcf4f28unnr28tqgvyhnxf0nqlp34wc0cp0vdnztuhsv5am43j5m2448s0chchlpg0j934vjqsx4p32skcednsq7sqqqqqqqqqh0snvq",
+          "certificate1qyqsqqqqqqqqqqp8kge5zazucttly90vdvh7eye5mym9cc2gwlpr5cz06ne9xdhkz7yu9nfquj90dtcw2ac39askygqsqn8y7m5"
+        ]
+      ],
+      [
+        "main",
+        [
+          "verifier1qygqqqqqqqqqqqpuycqqqqqqqqqz6fsqqqqqqqqqx49sqqqqqqqqqdz7qqqqqqqqqq0rvqqqqqqqqqqvqqqqqqqqqqqg55lauvmsw32a88g30ptkty77yth2q6y98lnhy6pevtapa0qrh7u9e05mrruqh9vruqwylskcfcuqmd6y9lpzyuzhu35lplw2xae5psm22pjhnhgf2l8yde85hcdtxlsymxfzagjhkxaefr8g9evk6q0gqt6ex69gcnw58rs4sdlgcfdsd4fg3dk768a9sggtqmkufaxtn3y3gqdd769puthgcmwjzs47rawtszvcy2xuzd0kyaph2zy32fzhhh93lzhz8wwvndms499f5jpwexz98gx9tjunyzy32ej2as93k7k90qrhxl4psy33lfudgpkfp0sn7ds4z33ar77vjul4ax2rzjj79rp725y0htyhhpwr8nvpsgv27wwlzzqup88vqyjzd448w7plcldx9mjagh5rj076a65erjxql9n9q52g4t4ajwwsznfqds3t0x88j4g8wzupt36dt3syxqnyvf954twjlqavqzhw5htuyqtpj0ynjcvjzf8tt259702xdfg2pu6fwm8kk2au3udgq093hjzdvylnkrxywqclna47qef43sg4y7vap574q24e3wvdcp3nmhpaud22whcqtflp7rfk8hnwqrycp20ud8f2pxq6vcynfns6ham0kmv29rvtwmwt7lw90psc5k30rr80zz6e2xr6s0uxy57nszv5fq89lan9h2n6fj0nrdt5rl0edwqlqdl72nqxd49ggd3l2k50lg29r9sruhjcmnd0e44q5lz6zw8ffjqfx97hptcs9ngw3hfxtwt8caplm7suzd8y7z6xc3e38322jjelegw4gaggsp4xa2tg3hyf7f48u5cquh3qe772lc4ex6q82whz7t72xuf883vrxnqq3mx07zy6tuvszf3nzgcrle4sskgygsu5etyr5drgr08m9qtdhekmx068fefusps8tdcx7fxxr0zpnnna9m0y73kef6fqfumsqqqqqqqqqd2dtlu",
+          "certificate1qyqsqqqqqqqqqqqz056zyqhekxvy84vufha6l6gxkmxwd8kk826aun9ptmjmtf8pazlc5tnh02pewmwsffg4pjr59uqsqv2rwsv"
+        ]
+      ],
+      [
+        "create_pool",
+        [
+          "verifier1qygqqqqqqqqqqqr02qqqqqqqqqqx75qqqqqqqqqqsmsqqqqqqqqqp2f7qyqqqqqqqr3xjqqqqqqqqqqvqqqqqqqqqqqw3ls43s883qh4mq63ktanzfds9pqedn6yw5s67xx0qhl730zfvslyytvsjns668kwdewrd4llhfuq99x4trkfkegndl0wltue33erptju53am73get7tdx4f9nth6qd40jv8zuuaapqpz0c9m62qvgs7cqw70sd0zm06zvelmxwhzr8q7e676se2wnwa4xxw7musgjgmw2rg5c85gxuq6z2j9na40uf5ku9e5sqf2uftpkhjqjg2yunzacazxsjcxd93ynlgjvvl53nwc4l69cx5yaxlae886a8hzgccvq6a07yhryqztmpcm4eysdk56ndpwu095kq64np9g020hf7s0en8hf7arunk9entd03yargkj7cegv5xq7uxf8cq0833ncvsh33tyljm5jeuaas5fvedw6fnw4epnktaa8p8g0tdfv5p6zghl8c2k8sjxgx3xxvwq8gvp8j3pl253875nwn8de6cu5lmfx4h4a2xqlqg6ekqvejc2ctprelm3rlqmlyw0xjaqxkr0emc7jphgrz9sjf2u7yfmmw5ejx4d22ly5xdhw9fq978m7ljwpr46a3s3z8k9qyj9pfa0jy3ey035mrf46z6nsq8tnhenmj4zg7ml0pu9wz9gl8eeew5kzwgxzrfccvwaxak76w3psm0ft0eukxmerku6uw7rmmdcnqv8y8a29t26rwcrzz535hfpdhu7r7ffwp0a0ku3njzganc8dsh6dq0f2s6ycs7pazzfcgyl7xkh07qv02ye0cmn4fpq2ymh72cu4x8am2aprm38vqem6sxfc8xsruls36qpuawshgems3f9uhgswfwauagpxvu8jcplra92jgl76tnryu8krm2njp2wwwy94c7z30ga7qtxezrcllk3we73xqstgaw945e5eedqq9dqe8ej8uyd328k9rj7pan5pqkk7dq2cfw9rfcuckpglg6kn5xu63csqqqqqqqqq0quyfr",
+          "certificate1qyqsqqqqqqqqqqzkyp9dngfdxkduerqs2qfpgmt28jnwyrh5rhkmcd52ts8y06wymnrhehg9nt8tsldket7yz8g4tgqsqpl3ddc"
+        ]
+      ],
+      [
+        "lock_pool",
+        [
+          "verifier1qygqqqqqqqqqqqqg9sqqqqqqqqq0c2cqqqqqqqqqhdsqqqqqqqqqpfuqqqqqqqqqqztrcqqqqqqqqqqvqqqqqqqqqqq9398et2nfc3fv9hza7ex9lgcvhu6cxwvf6lts97gwthjvkhxgqnyrlklwgn7nhrpje8rhehff7uqqwrcvywm0852hz5y3wln32msywl5eal4vawktyddjluspkmam92p2pvnak6dskzzrmrdqmxjyrseqqj9qr6r4p384rk8stwqfmrkln262puk6d8mcwpa8nd8q5pm6srv50ta0k6wv6p9kq72vvdemc0jdsr7gz647fwnyeuqy2j67x2z06nf90pekhz0xjnpvfja8l68j22r50c9nuey2lzwsa3kl3cy86y87hqzrtwskaezm2m6tccf4haqwpt93te57zk0wfyk9y5jyhmu56ugj08ndk706w4fngpc43ntcpm0edwqk787gy5a54k27z0e9uxacau97rpe7reuksnyua7amdprrdawthgwmcceam6ndqw97u40qplh7pf5ptqkf2gjtcalwnvx7g5kknvghrp6wnqnvr0xl3cr9837u7qs79xm08yzwp2r8wjv2275j6fr283rsp7juucpe6cfhxw7p8cj4v8t7zg2fhftxhvu9g5q6j42gged2y573ksqq2wjqql6wmvrqjrj2xxjasxvz6yxwznevzhunkd5yly5zsepd03k9dvgf2y0lqvxc0f4wxgtwt6z4ndwrj07xvfqwcpfcajcysq26z5hp5j3769pajm68re9rhmrvhhaktzqtlyfxt32hg3mysnxfta02dayemartt5ywww5y3jjq72qztenh8u6qr43vwfusnhnm93hr4whyg782klsata986dcf8wyx0q8qj77xayytrly6vx5slhspxxuqavdcuw0qcqhgq3th7fvqf65rvvm6zt8qvrmdqg7g2rvkx0atdetrnlhpku5lexcc656g3xmzknaqpkdv8ka4vyr6u0jvuk0yhhza54gtw3veq8sdgaezt3csp46g09nj2vlsqqqqqqqqqr8rtdd",
+          "certificate1qyqsqqqqqqqqqq8f599dpkg7eyh23tt76cn728xjkqs2pr3d75qpcld35warq47x5sjdel3a94khuhu5hk28g6w4nwqqqpgmrz3"
+        ]
+      ],
+      [
+        "resolve_pool",
+        [
+          "verifier1qygqqqqqqqqqqqpt9cqqqqqqqqqp7tsqqqqqqqqq4f5sqqqqqqqqp0v0qqqqqqqqqpuruqqqqqqqqqqvqqqqqqqqqqqqf8ftvh320ty46t3s9tzstvuwfefvn976h6xhcjkvx9a95zez8elr2vhsrh4tqan2vrfarxk2y5uq2s6jy0rdzw62lexwgugca97k8fw4ehjehy52wuepy3gk9nm0y3def63pk2u9733hthadsxd2d7xgp0th3dqq4kn254nevmdjr7t59dcz8yfykl32uwwtjlkhtwr09vp7pglvm8pg85tpcmg492lskmf8s89hjwv2kwakjylv6272409cu3u4cld9yc6kwst8jvk4k4v9xcgwj7phsprxd9h0kczfyfmxtve45qzhn8xd9u64pykax9qa9es8c467jjc4s5770m0u0g2qg4ss0nul8yvcw3y793m253605fuy4mtvnuqjxs3gnsu4fgu4unrqp0ga7etlj9yd5gkjcaswm2lcutkhzr2fys8slkc85ae9hudxjf47hyn0mqgq4jtegpyxn9a2x0qc5n2qq0g82zr8tg5u3edx64wpcu8ugf03vnhpe4tmfef429lta5jwymyzdpwgrl9ycwhcl44lr9hm5t9d5vkv0vjkfsd56yvxscta8mrjf64xltg887glg6alwlvmcwl3glfpqnzzqygf3e8d5yu9wkpyfrvwu9k4dc3zmje6dg3ngp6fnc2zpy2qw29j66cglrctxucgfhyhcnm02qy9uqt7v07fdzsspnux7du2lpdcwxpglv5cljvmtxuhhg26m4hwlkjsu8wjh0przenlplqxmlegscxmcjqd5xy7crggqglx8fwt43dafjvrj37ae09w03e9vt2f28zwpr33wsf735culs3qkd5swnpduf8asrqqndu7h9nupzlhhwsnfkknw69dwwh2s2f8zew9hn8mywsh63fkhhxmpv5y8ksunjv8fa6vtz5vf6lqppkrqxcuwxw4mwrueaner40cx9nnxzyxm5z6egg98j8ekfnm9y5kx9pqqqqqqqqqql48cn0",
+          "certificate1qyqsqqqqqqqqqqp3ptard3y05t9f64x55aayfctpr3zgrewhd7kerqhtsh6emmvqxu85lcgryem0kkk9lm03a4mn6kqqqjtp50k"
+        ]
+      ],
+      [
+        "predict",
+        [
+          "verifier1qysqqqqqqqqqqq9qyuqsqqqqqqqvkfcpqqqqqqqq7xvqyqqqqqqqqwluqgqqqqqqqpgm6qgqqqqqqqqvqqqqqqqqqqqdxqk8l6dj0fjup0j8lqrm06quyx636tel39yn0znqfgtga6zxfe2hj556gkrp7a45sc5zykszpcqqev4jzd6du4cw0nsm99aemres4e8yp7js5sln95s8cqptdcyqfd4djtzwau98dwyxpupuj4cw7t6cqzl082ft6jjzzd7kseskll46sklzgqv9qnvqdxdcp6f0rln4jtxr9xkqw0z0tnffqv8cksd8xpcxsrphcl7d4ruxxnpdhrfv7pjy29526pznc8vz5f6c3u309yte98lw7u9g0pp74p97n4qdnzxlvt0pjqpjzzqvxf03uzqflwv54cpqdsxq0z8hdtsts6xh2qs3qz8qznl3g8zr9jrazuv3ln79fwx96awrfvqryalr0z40wtwf6se8chgumtea3zdmv57z4lka46ks97u4l49qjzwpvhd2kfhkzmjhew6u246d9ycpkgfehexa3y5c86p8dys4ujpg2vu6jayjrkljf36xs77vm2v7fv932rls2rf2v7mqx8v8vxcnqz6sp9vg9xtrdh78euzskuafusdd7w2dqmqlpu0z42d7m4ktvhpd9z5rzejhzdquhgz9zxtwkt05t59uszdldesypt5jwaf9xpxquhzsl43aj0pmmym600ug8tcmpfj8enquw9kf36h9n4q7wrjwm7jukk3hnqyltmu0kla3e9jjpfhtvq2hvc52j7su8e2wgmwj6lkdhejsq29gwmpg3t2vau437vqjn8eekgtyykqkdhextar2gufs08ze6rv7uhfgm7avqt5rn5wzndcvdd022dpsygfmpgm8d5mp3mqrl4xhw833g75qkcfkamvkqe2qu38trz39l6q3nrulz2342x0wpskj3tukmcg4knhc6jeduhffel8wtdfu6fe4uztcq5m8ylp7qv2rzquu6st62lwpv9s5pn0mmwlaccnyzzhfaun4slkz7puqzqqqqqqqqyjw905",
+          "certificate1qyqsqqqqqqqqqq80x6fxfw7mqr4mzuwdnhxgvrwrvwk95rdgc2a8ezx2g2awjlzwyv90np3tcg7wvlvua9wkgzhxrsqqqghw3l7"
+        ]
+      ],
+      [
+        "reveal_prediction",
+        [
+          "verifier1qygqqqqqqqqqqqxjmsqqqqqqqqq0lhqqqqqqqqqqvjkszqqqqqqqqyu7qyqqqqqqqrw9uqgqqqqqqqqvqqqqqqqqqqqxlte3rfd8lxzq7krdmdra5c3fkj6en37d3np04p98y56dhywgl4j2t54wauar90x88p50n9u94nsqs0vsye35jl5s3x6ln9p6mxcnapgwrul7e9enmtdmy8qxj0ppnct6x8vcksp25342axaahpgnx78srx223en9depmq7d9eqqhxussd9e28relywle0u83qmqqmr7zmek6zs39xxhrtagyf4rc2t2fr0jhqqqql8qxlgcswwvjlx7euk0nkrlv63xdpwdg87c3ng3wu0xq6u9d4vyxk9rv8u5argcvetc6zvy8pqtxug9jdynzqeam57w56d2hjyvjm4vx56jfaj9mvudlr4upyvp679xcdkxtnxkvly7ckfxcaq06x6q23s8hxfr3ql3ufa47gjmtgjzm8p5qyjxazx8q2uzmf908yxvmau6mzgfklpldxyrjy5k5qlp7vqyqxk0uatkegtkaznxf5yvq3dlmcngqupjwu5uajuvj4qaqdfmd68h52ejvugvnvu2anhf6gkcuncmqrvva5kny3txe4effpvxtssgjsku7m8wuler0xp9acxda7drv0kqtrjdvj5me78krj0jhncucmjm7q87nx6nhfnng8fzhg869yx9twwh48sllf89xvpp75rqnj0n306953v3u6dsyrt6mrld7qvfugsw4vqz3dkna0satmq2hh7wjnfprkkn483sv0pflg7jfdg273s2mhxr6lu7j24cx5gye84eaaaqe6hfstkqagcr7jrphxaxh84pwpp8h9c0cx8sljazk6mcqepp65ewkhh0xmgfcx303uhfg3vd0z2rwcgwl6y5q9vajy04af6lpux63mp7qn4kr7zxnxu63z8da4ev4qfnhazjfenescefhx4nwjmtswraszgv433dspgp2vv47gjrmww7e4df8l4yx76awk3yf24p5wlpvv4tnau3veumspv0qzqqqqqqqqyvlrxw",
+          "certificate1qyqsqqqqqqqqqq9mculxhtwryza7kez7f74xmn7pcarj925wh784vkwk643r0ynt53j7pwjp4ph03xex0tzz82nxqqqqq0smg3j"
+        ]
+      ],
+      [
+        "check_prediction",
+        [
+          "verifier1qygqqqqqqqqqqqxu0qqqqqqqqqqwx7qqqqqqqqqq4n0sqqqqqqqqpwh5qqqqqqqqqqptgqqqqqqqqqqvqqqqqqqqqqqt4pn3ulj4vqm2fr5h4fzmkan99rehdecu33ycp8l2ahz43f9yu4kgheczmazuhfgalcn8u3wkgvvpyptakaxzwkru6zv80rm757q996wwdfm4t5t02d8ppvv2dmxsz30p7550rdv8lgdxlfprtr2z67vqzx8v0l2kgr7qw3qmxekcj49y9uenr6uarsvg4khrcpvez0r56rcwaxxsx7777e0d4re2nghcgyq4qzl9x6cyjzn8xzwqfznm77q3wk09flfln5ndjkd0ns03lrnm9yvvwg9f3xn7y049egc53ew8d7l8sq837m3fxyfxrm3vfdfxjw8dslp4rvx079590e4hqssgxwrsjp52vvs8e4t9e86n4p4cseud9ph0tsqw8m0ljjpnwftug3t07a6rv27w3vlewhvgpd4l6cl49qv7qxre7swurg2fvql86z6vzwfy44aaqwgpvkyexr2ad8vnn6337y5kq5llct75edzmtnyle7cf3jf7h82exx3w6075jupnngva2prexj93j2ngr54kx0m42smh6haxnsgxn0cjrvlgqzt7xagluxtychz5pc37grc23f64mnmm57jzep2uv0u75f6lsz3rlcvk9m9fwxpj903c0p05jze0rgs6jqp0rywhhw6denn2lfjyzlwdjhyqapjzdhsp5tax56c4zq8cvj4yjrkxj8h6pudfxqj99pu3z6jf2ennfr0t2a05m9rzn2p85rcha0qz3498686fgus6fgczk2q04tj7w4hje62hn9xvs69wkrm3ctua2sm0d7cerm2knscavx85rvcqxg86aur8c8z0x3tgj0v7qpcpmm0kwx3jf0wn0ks62uza3esg99dww5y5zv8wjhq9aehqzfrx45dc6g2a56v853fh4ahq6pr33q6cr7r5h9c6vpd8f6a5l7acmauqd89muu4dnld9ru50t0hptcp8yr8lg7jsqqqqqqqqqay7zyp",
+          "certificate1qyqsqqqqqqqqqqzc7d3lz9hlzwnurhvcfc83l8lnzujkjuvxyllknzcw28xl80x7zyj6hyu9qx05jray0yndweptryqsq5amtyf"
+        ]
+      ],
+      [
+        "collect_winnings",
+        [
+          "verifier1qysqqqqqqqqqqqxkwuqsqqqqqqqpk7qpqqqqqqqq6geqxqqqqqqqqlyaqvqqqqqqqqtn2qsqqqqqqqqvqqqqqqqqqqqttxmns9w5gc8p2vfq5849rnn7sdgnft6c5avmcdqgvhd3zcmxg80hnhnfszwhu0vptcytfgsl74qqf2mkhn5m2gjfqe5ge954vytqxdklzqd5vkwhzzf2e2d3jxs88c7r4j797zjs8xwy7vhh4tcwk5dgzhrrwh5whmwy78uy28m2q6t0yusevjhz2hsjyjrjedmtg8eyy83r64wa2zk5jmsnt42cswvtxtctsyg5p3w7z8f54vhu42lkafv2932dqdahq940f5rt82xhauya4fearcl62szhf3efchm4swtcpwszpq94d2rkp4eskaggwfqedq83qe2pguklws9hqqe9zll5jamxv5hzjywyvptm3vwc79wa6whty7p62wqyyl06y78ej0dhwl06fgm58ku2fycgq8ah36wxfsd4v7skeexk52epjvalmee7n4zk6hmswjm7hdcq26zum4xdwuddy0yf2dkukqz0veg4xdvvt6yfwwt8vg9cf8ecyt4ygm8pc654kvj456k4q3kdsqhcqwg2znc8vxggeexjhjy8m7x35jq0ehp9h3tyqvley25j7nu92vhndvepsckk8g9zgy7c5c5m4vdzsp5kksjtkdy0d9puu7lzgtu0c88ewj33m0pfyuql4le2wtykd0uf7cv9ynw0yf0qx5d9u8cr8py04qpngxwnnfl8tl986e6cul8978vr97nf4aahpledtgrrp68te7gfdxjhmkshdr9dj72xs5w7aq49wsql6c8luvjx90wexgjrjnd37nlk4qv8302gfaep4z83ka4j7ctg957x8lmlrhmx7hj60mxcnve3qfupemu0msltqwv7w4zd0cqyh2pmf2fhnvsz5g3s69xnyun7dvjgkq0s0pk6pultggghz87ksfxq6xdqr0muxeq4dg7m73jcdj6xw0recdfnqd8s5l02g4pt2whallsxeevjphnqzqqqqqqqqy289jh",
+          "certificate1qyqsqqqqqqqqqqy0gktlsr2ufqzkylcz5rd53d6v3xdpwm4hhru6tv77dqqc0rm7t73zydsm2kqzqprt3ycmwutrpzqqqve80p6"
+        ]
+      ]
+    ],
+    "program_checksum": [
+      "221u8",
+      "232u8",
+      "203u8",
+      "23u8",
+      "37u8",
+      "128u8",
+      "87u8",
+      "33u8",
+      "101u8",
+      "230u8",
+      "5u8",
+      "119u8",
+      "149u8",
+      "164u8",
+      "101u8",
+      "85u8",
+      "165u8",
+      "12u8",
+      "102u8",
+      "29u8",
+      "20u8",
+      "253u8",
+      "197u8",
+      "161u8",
+      "114u8",
+      "35u8",
+      "248u8",
+      "102u8",
+      "5u8",
+      "182u8",
+      "18u8",
+      "123u8"
+    ],
+    "program_owner": "aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd"
+  },
+  "fee": {
+    "transition": {
+      "id": "au1ad9mf6frvghfx7gymcyukh9p8xd9k9u5pgpnc6y7ngpdqft3nv9sv4c0ml",
+      "program": "credits.aleo",
+      "function": "fee_public",
+      "inputs": [
+        {
+          "type": "public",
+          "id": "6860312357130513783060093468216993300448570046321219192617950723995057779950field",
+          "value": "13334387u64"
+        },
+        {
+          "type": "public",
+          "id": "5550051733959072520728214175388480515439898161833744143553003218147542614394field",
+          "value": "0u64"
+        },
+        {
+          "type": "public",
+          "id": "636785367930416543123413439599716476103626912552373543378884516672270447506field",
+          "value": "7065915310471253847461656982462257265431130350395943427351498175351240395634field"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "future",
+          "id": "7413975205675869535954060866626673328550377234584976981141424951613609316609field",
+          "value": "{\n  program_id: credits.aleo,\n  function_name: fee_public,\n  arguments: [\n    aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd,\n    13334387u64\n  ]\n}"
+        }
+      ],
+      "tpk": "2892795659838964069292451494763350973946613844545925424041064008330300308456group",
+      "tcm": "5961844950739326002040277343906403052416089518426132024550197660344907753773field",
+      "scm": "2301674451605167013677810874241059944887344665634492454592527366689172553575field"
+    },
+    "global_state_root": "sr1vt2hfczxg3de77e2qdac8s8tk2m4njnq5m9pgvveexcqt33n9qzqzcd2st",
+    "proof": "proof1qyqsqqqqqqqqqqqpqqqqqqqqqqqze2d4pv8tkjkh9qlwdyrw4ve53uvvgz960a6dpnm6utn2shjwn3znuam53a8kknynhyzpqzddx3upq8evgu9rd8k9x89lp4teupjl8mpn0drenp8wljh5k60ha5t5pwf8xxgylpnsa64qu3gr959njs88jqpuauqvvwzu0cw09wtm249xa4rg8vxqkxkjv0fnhfhtmueh7ernfu2382r29n8j6p3a4re0a4tqfyqjwqy4xvfvleqyx8uj8pz504cz2g6qyts5hzsq5gsd3wz3h0c5qswn3yuu2anqc0wcm972nhlr6rcqplg50rc63fge37cv25pce4mm3a85jnkakt207w3cftzq6m4kk6zfxlp3qln3s02wjln3lztqv42qqpv6cq2zw8rgtw5wgspuy0hct52887n40u7fcpe3h8k627aluqdl28r3p046earaq3na0s4eg76aspjefpscfdr9ksh2jsvjy6dfxfxhkm7shnrrcrl22yfyr38sys9x28r29c22x4dsh4nv45d5pg3rtq8he0rwpwf69ch9ryrzr7efreh3ql9z5kytvmwpl6z0qsamkrfakpf6qn4dysagzftwjyzk8688gcqlsjev5xrwzleg3eahvzepqwszwcsu2zjzzhrp643hs6sjz2kclarjc02d5sxr04pa5hs0wtk2rfsq4j4s0xlqdtgzv3r5rz6ydvjrjurenssx5z3083p9d6v9c9jwwupqw6jhj7xgyxcqqrlj9m0qm503tsel8al7zv4xxa5gfr93j3u5qq9rd603yz862pr25msg665f0xvtn4u95csknlxpn9fl3m0k80s2q3fvhpqucvnfvdyxx57xug7x4yacjyxq8vdn47twd5g6qhp3lvasc8smmr75fvjujun4ncjj6l6r3z8z69llzqeplcke5j3rzk46kmcql0jhzfaqsy6k9xp5u7xaxw2efah2qmux8tfdfkzmg7p37vjzr5z34n66efxp0ljz9szvljr5eqz8p2lhplxd9tz75227hhf29qvzczny5v2wk2qgpngu6ve6qsw0zndzegca69e9d5j4v6u84j4fdhhxpf96unxykzyzzdn27lv6rkrxhnk8kgjk8s8sah78l2852llmry2qmly748mtzrrq38p7ht29rd5pt6zpkz5slfel02ccvcqd9c3hv3g8qvqqqqqqqqqqpyaw9vt0ftg2uwpuf3ugx4p5usmqgtwdv3z9z7ths9wqvrn78grzad8z6chkwstt87447706yhzesyqzthlz0trnu6mlgsavl4f5wx6xw6gz3afmlp60mjc5hchy7axz8cgxcs5n8lv0uyrzww46xncjm4sqqysq693jypaqcxrujnctk6lcewcnyet68yuzx2cf5lsf5p8pqkmpra53ug8wrfvx94mr6mrp96t70lu4fksw8nyt8qvzjfhdw2am7dpwsmhs2kdwdewgzzm36kkhv84psqqq4n63ws"
+  }
+}
