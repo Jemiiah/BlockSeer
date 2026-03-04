@@ -31,11 +31,15 @@ export function TradingPanel({ market }: TradingPanelProps) {
     setWalletModalVisible(true);
   };
 
-  // Convert public credits to a private record so the user can trade
+  // Convert public credits to a private record so the user can trade.
+  // We convert the stake amount + extra buffer for the prediction fee,
+  // and pay the conversion fee from the public balance too.
   const handleConvertToPrivate = async () => {
     if (!connected || !address || !executeTransaction) return;
 
-    const convertAmount = amount ? parseFloat(amount) : 5;
+    // Convert enough for the stake + prediction fee (1.5 ALEO) + buffer
+    const stakeAmount = amount ? parseFloat(amount) : 5;
+    const convertAmount = stakeAmount + 2; // extra for prediction fee buffer
     const microcredits = Math.floor(convertAmount * 1_000_000);
 
     setIsConverting(true);
@@ -47,7 +51,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
         program: 'credits.aleo',
         function: 'transfer_public_to_private',
         inputs: [address, `${microcredits}u64`],
-        fee: 300_000,
+        fee: 1_000_000, // 1 ALEO fee for conversion
         privateFee: false,
       });
 
