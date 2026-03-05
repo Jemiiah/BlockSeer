@@ -1,5 +1,5 @@
 // Program ID - deployed version
-const PROGRAM_ID = 'manifoldpredictionv4.aleo';
+const PROGRAM_ID = 'manifoldpredictionv5.aleo';
 
 // Network API - using testnet endpoint
 const NETWORK_URL = 'https://api.explorer.provable.com/v1/testnet';
@@ -11,7 +11,7 @@ export interface AleoPool {
   description: string;
   options: [string, string];
   deadline: number;
-  status: number; // 0 - open, 1 - closed, 2 - resolved
+  status: number; // 0=open, 1=locked, 2=resolved, 3=disputed, 4=cancelled
   winning_option: number;
   total_staked: number;
   option_a_stakes: number;
@@ -19,6 +19,8 @@ export interface AleoPool {
   total_no_of_stakes: number;
   total_no_of_stakes_option_a: number;
   total_no_of_stakes_option_b: number;
+  token_id: string; // '0' = ALEO, else ARC-21
+  resolved_at: number; // block height
 }
 
 // Parse Aleo field value to string (removes 'field' suffix)
@@ -71,6 +73,8 @@ function parsePoolStruct(data: Record<string, string>): AleoPool | null {
       total_no_of_stakes: parseU64(data.total_no_of_stakes),
       total_no_of_stakes_option_a: parseU64(data.total_no_of_stakes_option_a),
       total_no_of_stakes_option_b: parseU64(data.total_no_of_stakes_option_b),
+      token_id: parseField(data.token_id || '0field'),
+      resolved_at: parseU64(data.resolved_at || '0u64'),
     };
   } catch (error) {
     console.error('Error parsing pool struct:', error);

@@ -4,6 +4,57 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
+## [Deployed] - v5 Stablecoin, Fees, Disputes, Claim Winnings - 2026-03-05
+
+### Deployed
+- **Testnet deployment** — `manifoldpredictionv5.aleo` deployed to Aleo testnet
+- **Transaction ID:** `at1wy7utdnrlcgdruj7zcm2dvdj0aanz2xaq6k69fc6uauqvucfev9srs2nja`
+- **Deployer:** `aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd`
+
+### Added — Smart Contract (manifoldpredictionv5.aleo)
+- **Stablecoin support** via `token_registry.aleo` — pools can now be denominated in USDCx, USAD, or any ARC-21 token (addresses judge feedback: "doesn't integrate stablecoin programs")
+- **`credits.aleo` integration** — `predict()` uses `transfer_private_to_public` (deposits to program balance), `collect_winnings()` uses `transfer_public_to_private` (trustless self-claim from program balance)
+- **Protocol fee** — 2% (200 BPS) deducted from winnings in `collect_winnings()` and `collect_winnings_token()`
+- **Dispute mechanism** — `dispute_pool()` transition allows any user to dispute a resolved pool within 2880 blocks (~24h). Status flow: resolved(2) → disputed(3). `cancel_pool()` admin transition cancels disputed pools (status 3→4)
+- **User self-claim** — `collect_winnings()` lets winners claim directly from program's public balance without admin involvement. Verifies: correct winning option, dispute window passed, not double-claimed
+- **Token predictions** — `predict_with_token()` accepts `token_registry.aleo/Token` records for stablecoin-denominated pools
+- **Token claims** — `collect_winnings_token()` for token-denominated pool payouts (admin relay)
+- **Refunds** — `refund_prediction()` self-refund from cancelled pools (ALEO), `refund_pred_token()` for token refunds
+- **New mappings** — `claims` (double-claim prevention), `dispute_count`, `pool_balance` (accounting)
+- **Pool struct** gains `token_id: field` and `resolved_at: u64`
+- **Prediction record** gains `token_id: field`
+- 12 transitions total (was 7 in v4)
+
+### Added — Oracle Backend
+- `POST /markets/:id/cancel` — admin cancels disputed markets on-chain
+- `GET /markets/disputed` — list disputed markets
+- Dispute detection phase in worker — scans on-chain pool status for `3u8` (disputed), syncs to DB
+- `token_id` parameter in `POST /markets` and market creation flow
+- `dispute_window_end`, `winning_option`, `cancelled` fields in market API responses
+- DB schema migrations: `token_id`, `dispute_window_end`, `winning_option`, `cancelled` columns
+
+### Added — Frontend
+- **Claim Winnings UI** — trading panel shows claim button when market resolved + dispute window passed + user has winning predictions. Calculates payout with 2% fee breakdown
+- **Dispute UI** — dispute button with countdown timer shown during dispute window after resolution
+- **Refund UI** — refund button for cancelled market predictions
+- **Token denomination** — pools display their currency (ALEO/USDCx/USAD) throughout: market cards, featured carousel, trading panel, event detail, portfolio
+- **Fee disclosure** — "2% protocol fee on winnings" shown in order summary and event detail stats
+- **4 new hooks** — `use-collect-winnings`, `use-dispute`, `use-refund`, `use-predict-token`
+- **Claims API route** — `app/api/claims/route.ts` proxies to Oracle for token claims
+- **Token config** — `lib/tokens.ts` maps token_id → { symbol, name, decimals }
+- Market cards show disputed/cancelled status badges
+- Portfolio shows token symbols per position, claimable/refundable indicators
+
+### Changed
+- Program ID → `manifoldpredictionv5.aleo` across all hooks, components, and providers
+- `program.json` — added `token_registry.aleo` dependency
+- P&L calculation now accounts for 2% protocol fee on winnings
+- Volume display uses pool's token denomination instead of hardcoded "ALEO"
+- `Market` type gains: `tokenId`, `tokenSymbol`, `winningOption`, `disputeWindowEnd`, `isInDisputeWindow`, `isCancelled`, `isClaimable`
+- `UserPrediction` gains: `tokenId`, `tokenSymbol`, `isCancelled`, `isClaimable`
+
+---
+
 ## [Unreleased] - 2026-03-05
 
 ### Added

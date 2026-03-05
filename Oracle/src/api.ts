@@ -41,6 +41,10 @@ app.get("/markets", async (req, res) => {
         const enriched = markets.map((m: MarketRow) => ({
             ...m,
             reveal_window_end: m.reveal_window_end ? parseInt(m.reveal_window_end, 10) : null,
+            dispute_window_end: m.dispute_window_end ? parseInt(m.dispute_window_end, 10) : null,
+            token_id: m.token_id || '0',
+            winning_option: m.winning_option ?? null,
+            cancelled: m.cancelled ?? false,
         }));
         res.json(enriched);
     } catch (error) {
@@ -91,7 +95,8 @@ app.post("/markets", async (req, res) => {
             option_b_label,
             metric_type,
             threshold,
-            deadline
+            deadline,
+            token_id
         } = req.body;
 
         // Validate required fields
@@ -143,7 +148,8 @@ app.post("/markets", async (req, res) => {
             metric_type || 'generic',
             description || '',
             option_a_label || 'YES',
-            option_b_label || 'NO'
+            option_b_label || 'NO',
+            token_id || '0'
         );
 
         res.status(201).json({
@@ -285,6 +291,45 @@ app.post("/predictions", async (req, res) => {
         });
     } catch (error) {
         console.error("Error recording prediction:", error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// Cancel a disputed market
+app.post("/markets/:id/cancel", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const market = await db.getMarketById(id);
+        if (!market) {
+            return res.status(404).json({ error: "Market not found" });
+        }
+
+        if (market.status !== 'disputed') {
+            return res.status(400).json({
+                error: `Market must be disputed to cancel. Current status: ${market.status}`
+            });
+        }
+
+        await db.markCancelled(id);
+
+        res.json({
+            success: true,
+            market_id: id,
+            message: "Market cancelled successfully"
+        });
+    } catch (error) {
+        console.error("Error cancelling market:", error);
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// Get disputed markets
+app.get("/markets/disputed", async (req, res) => {
+    try {
+        const markets = await db.getDisputedMarkets();
+        res.json(markets);
+    } catch (error) {
         res.status(500).json({ error: (error as Error).message });
     }
 });

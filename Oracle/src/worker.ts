@@ -18,7 +18,9 @@ import {
     CREATE_POOL_FEE,
     LOCK_POOL_FEE,
     RESOLVE_POOL_FEE,
+    CANCEL_POOL_FEE,
     REVEAL_WINDOW_SECONDS,
+    DISPUTE_WINDOW_SECONDS,
 } from "./config.js";
 
 // Setup SDK
@@ -145,12 +147,16 @@ async function createMarketOnChain(market: MarketRow): Promise<boolean> {
         const optionBField = stringToField(option_b_label || "NO");
         const deadlineU64 = `${deadline}u64`;
 
-        // Inputs for create_pool: title, description, options[2], deadline
+        // Inputs for create_pool: title, description, options[2], deadline, token_id
+        const tokenId = (market as MarketRow & { token_id?: string }).token_id || '0';
+        const tokenIdField = `${tokenId}field`;
+
         const inputs = [
             titleField,
             descField,
             `[${optionAField}, ${optionBField}]`,
-            deadlineU64
+            deadlineU64,
+            tokenIdField
         ];
 
         const fee = CREATE_POOL_FEE / 1_000_000;
@@ -322,12 +328,38 @@ export async function startWorker() {
                     const success = await resolveMarket(market_id, winningOption);
                     if (success) {
                         await db.markResolved(market_id);
+                        await db.setWinningOption(market_id, winningOption);
+                        // Set dispute window end
+                        const disputeEnd = Math.floor(Date.now() / 1000) + DISPUTE_WINDOW_SECONDS;
+                        await db.setDisputeWindowEnd(market_id, disputeEnd);
                         console.log(
-                            `✅ Market ${market_id} resolved as ${winningOption === 1 ? "YES" : "NO"}`
+                            `✅ Market ${market_id} resolved as ${winningOption === 1 ? "YES" : "NO"}. Dispute window until ${new Date(disputeEnd * 1000).toISOString()}`
                         );
                     }
                 } else {
                     console.log(`⚠️ Could not fetch data for market ${market_id}, retrying next loop...`);
+                }
+            }
+            // 4. Detect on-chain disputes (pool status 3 = disputed)
+            const resolvedMarkets = await db.getAllMarkets();
+            for (const market of resolvedMarkets) {
+                if (market.status !== 'resolved') continue;
+                try {
+                    const marketIdField = market.market_id.endsWith('field') ? market.market_id : stringToField(market.market_id);
+                    const poolData = await networkClient.getProgramMappingValue(
+                        PROGRAM_ID,
+                        "pools",
+                        marketIdField
+                    );
+                    if (poolData) {
+                        const statusMatch = poolData.match(/status:\s*(\d+)u8/);
+                        if (statusMatch && parseInt(statusMatch[1]) === 3) {
+                            console.log(`⚠️ Market ${market.market_id} disputed on-chain. Syncing to DB...`);
+                            await db.markDisputed(market.market_id);
+                        }
+                    }
+                } catch {
+                    // ignore — market may not be on-chain
                 }
             }
         } catch (e) {

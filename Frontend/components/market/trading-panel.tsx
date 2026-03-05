@@ -8,10 +8,14 @@ import { usePrediction } from '@/hooks/use-prediction';
 import { useOnChainPool } from '@/hooks/use-on-chain-pool';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui';
-import { Loader2, BarChart3, ArrowDownToLine, AlertTriangle, RefreshCw, Lock, Eye, Timer } from 'lucide-react';
+import { Loader2, BarChart3, ArrowDownToLine, AlertTriangle, RefreshCw, Lock, Eye, Timer, Trophy, ShieldAlert, Undo2 } from 'lucide-react';
 import { useRevealPrediction } from '@/hooks/use-reveal-prediction';
+import { useCollectWinnings } from '@/hooks/use-collect-winnings';
+import { useDispute } from '@/hooks/use-dispute';
+import { useRefund } from '@/hooks/use-refund';
+import { formatTokenAmount } from '@/lib/tokens';
 
-const PROGRAM_ID = 'manifoldpredictionv4.aleo';
+const PROGRAM_ID = 'manifoldpredictionv5.aleo';
 const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 const CREATE_POOL_FEE = 2_000_000; // 2 ALEO in microcredits
 
@@ -50,6 +54,9 @@ export function TradingPanel({ market }: TradingPanelProps) {
     revealingId,
     txMessage: revealTxMessage,
   } = useRevealPrediction();
+  const { collectWinnings, isLoading: isCollecting, error: collectError } = useCollectWinnings();
+  const { disputePool, isLoading: isDisputing, error: disputeError } = useDispute();
+  const { refundPrediction, isLoading: isRefunding, error: refundError } = useRefund();
 
   // Reveal window countdown
   const [revealCountdown, setRevealCountdown] = useState<string>('');
@@ -70,6 +77,26 @@ export function TradingPanel({ market }: TradingPanelProps) {
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [market.isInRevealWindow, market.revealWindowEnd]);
+
+  // Dispute window countdown
+  const [disputeCountdown, setDisputeCountdown] = useState<string>('');
+  useEffect(() => {
+    if (!market.isInDisputeWindow || !market.disputeWindowEnd) return;
+    const tick = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const remaining = market.disputeWindowEnd! - now;
+      if (remaining <= 0) {
+        setDisputeCountdown('Ended');
+        return;
+      }
+      const hours = Math.floor(remaining / 3600);
+      const mins = Math.floor((remaining % 3600) / 60);
+      setDisputeCountdown(`${hours}h ${mins}m`);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [market.isInDisputeWindow, market.disputeWindowEnd]);
 
   const poolPredictions = getPredictionsForPool(market.id);
 
@@ -237,6 +264,16 @@ export function TradingPanel({ market }: TradingPanelProps) {
       <h2 className="text-lg font-semibold text-white mb-6">Place Order</h2>
 
       {/* Pool Stats */}
+      {/* Token denomination badge */}
+      {market.tokenSymbol && market.tokenSymbol !== 'ALEO' && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border border-violet-500/30 bg-violet-500/[0.1] text-violet-400">
+            {market.tokenSymbol}
+          </span>
+          <span className="text-xs text-[hsl(230,10%,40%)]">Pool denomination</span>
+        </div>
+      )}
+
       {onChainPool && (
         <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4 mb-6 space-y-2">
           <div className="flex items-center gap-2 text-xs font-medium text-[hsl(230,10%,50%)] mb-2">
@@ -247,15 +284,15 @@ export function TradingPanel({ market }: TradingPanelProps) {
             <>
               <div className="flex justify-between text-sm">
                 <span className="text-[hsl(230,10%,40%)]">Total Staked</span>
-                <span className="text-white/80 font-medium">{(onChainPool.total_staked / 1_000_000).toFixed(2)} ALEO</span>
+                <span className="text-white/80 font-medium">{formatTokenAmount(onChainPool.total_staked, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-[hsl(230,10%,40%)]">Yes Pool</span>
-                <span className="text-blue-400 font-medium">{(onChainPool.option_a_stakes / 1_000_000).toFixed(2)} ALEO</span>
+                <span className="text-blue-400 font-medium">{formatTokenAmount(onChainPool.option_a_stakes, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-[hsl(230,10%,40%)]">No Pool</span>
-                <span className="text-white/60 font-medium">{(onChainPool.option_b_stakes / 1_000_000).toFixed(2)} ALEO</span>
+                <span className="text-white/60 font-medium">{formatTokenAmount(onChainPool.option_b_stakes, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
               </div>
             </>
           ) : market.isInRevealWindow ? (
@@ -336,7 +373,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
       {/* Amount Input */}
       <div className="mb-6">
-        <label className="text-xs text-[hsl(230,10%,40%)] mb-2 block">Amount (ALEO)</label>
+        <label className="text-xs text-[hsl(230,10%,40%)] mb-2 block">Amount ({market.tokenSymbol})</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[hsl(230,10%,40%)]">◎</span>
           <input
@@ -356,7 +393,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
               onClick={() => setAmount(val.toString())}
               className="flex-1 py-2 text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-[hsl(230,10%,50%)] hover:text-white rounded-lg border border-white/[0.04] hover:border-white/[0.08] transition-all"
             >
-              {val} ALEO
+              {val} {market.tokenSymbol}
             </button>
           ))}
         </div>
@@ -381,11 +418,15 @@ export function TradingPanel({ market }: TradingPanelProps) {
             <div className="border-t border-white/[0.06] pt-3 space-y-2">
               <div className="flex justify-between">
                 <span className="text-[hsl(230,10%,50%)]">Potential Return</span>
-                <span className="text-emerald-400 font-semibold">{orderSummary.potentialReturn} ALEO</span>
+                <span className="text-emerald-400 font-semibold">{orderSummary.potentialReturn} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-[hsl(230,10%,40%)]">Profit</span>
-                <span className="text-emerald-400/80 font-medium">+{orderSummary.profit} ALEO</span>
+                <span className="text-emerald-400/80 font-medium">+{orderSummary.profit} {market.tokenSymbol}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[hsl(230,10%,40%)]">Protocol Fee</span>
+                <span className="text-white/40 font-medium">2%</span>
               </div>
             </div>
           </>
@@ -425,7 +466,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
               ) : (
                 <ArrowDownToLine className="h-4 w-4" />
               )}
-              Convert {amount || '5'} ALEO to Private
+              Convert {amount || '5'} {market.tokenSymbol} to Private
             </button>
           )}
         </div>
@@ -457,7 +498,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
                     ) : (
                       <Eye className="h-4 w-4" />
                     )}
-                    Reveal: {pred.option === 1 ? 'Yes' : 'No'} — {(pred.amount / 1_000_000).toFixed(2)} ALEO
+                    Reveal: {pred.option === 1 ? 'Yes' : 'No'} — {formatTokenAmount(pred.amount, market.tokenId).toFixed(2)} {market.tokenSymbol}
                   </span>
                 </button>
               ))}
@@ -521,6 +562,112 @@ export function TradingPanel({ market }: TradingPanelProps) {
         </div>
       )}
 
+      {/* Claim Winnings Section */}
+      {market.isClaimable && connected && poolPredictions.length > 0 && onChainPool && (
+        <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm font-semibold text-emerald-400">Claim Winnings</span>
+          </div>
+          <p className="text-xs text-emerald-400/60 mb-3">
+            This market is resolved and the dispute window has passed. Claim your winnings below (2% protocol fee).
+          </p>
+          <div className="space-y-2">
+            {poolPredictions.map((pred) => (
+              <button
+                key={pred.id}
+                onClick={() => collectWinnings({
+                  winningOption: onChainPool.winning_option,
+                  totalStaked: onChainPool.total_staked,
+                  optionAStakes: onChainPool.option_a_stakes,
+                  optionBStakes: onChainPool.option_b_stakes,
+                  predictionRecord: pred.recordInput,
+                  onProgress: (msg) => setTxMessage(msg),
+                })}
+                disabled={isCollecting}
+                className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-sm font-medium border border-emerald-500/20 transition-colors disabled:opacity-50"
+              >
+                <span className="flex items-center gap-2">
+                  {isCollecting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trophy className="h-4 w-4" />
+                  )}
+                  Claim: {pred.option === 1 ? 'Yes' : 'No'} — {formatTokenAmount(pred.amount, market.tokenId).toFixed(2)} {market.tokenSymbol}
+                </span>
+              </button>
+            ))}
+            {collectError && (
+              <p className="text-xs text-red-400/70 mt-1">{collectError}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Dispute Section */}
+      {market.isInDisputeWindow && connected && (
+        <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldAlert className="w-4 h-4 text-amber-400" />
+            <span className="text-sm font-semibold text-amber-400">Dispute Window</span>
+            <span className="ml-auto text-xs font-mono text-amber-400/80">{disputeCountdown}</span>
+          </div>
+          <p className="text-xs text-amber-400/60 mb-3">
+            If you believe this market was resolved incorrectly, you can dispute it during this window.
+          </p>
+          <button
+            onClick={() => disputePool(market.id, (msg) => setTxMessage(msg))}
+            disabled={isDisputing}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-sm font-medium border border-amber-500/20 transition-colors disabled:opacity-50"
+          >
+            {isDisputing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ShieldAlert className="h-4 w-4" />
+            )}
+            Dispute Resolution
+          </button>
+          {disputeError && (
+            <p className="text-xs text-red-400/70 mt-2">{disputeError}</p>
+          )}
+        </div>
+      )}
+
+      {/* Cancelled / Refund Section */}
+      {market.isCancelled && connected && poolPredictions.length > 0 && (
+        <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Undo2 className="w-4 h-4 text-red-400" />
+            <span className="text-sm font-semibold text-red-400">Market Cancelled</span>
+          </div>
+          <p className="text-xs text-red-400/60 mb-3">
+            This market was cancelled after a dispute. Refund your predictions below.
+          </p>
+          <div className="space-y-2">
+            {poolPredictions.map((pred) => (
+              <button
+                key={pred.id}
+                onClick={() => refundPrediction(pred.recordInput, (msg) => setTxMessage(msg))}
+                disabled={isRefunding}
+                className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium border border-red-500/20 transition-colors disabled:opacity-50"
+              >
+                <span className="flex items-center gap-2">
+                  {isRefunding ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Undo2 className="h-4 w-4" />
+                  )}
+                  Refund: {pred.option === 1 ? 'Yes' : 'No'} — {formatTokenAmount(pred.amount, market.tokenId).toFixed(2)} {market.tokenSymbol}
+                </span>
+              </button>
+            ))}
+            {refundError && (
+              <p className="text-xs text-red-400/70 mt-1">{refundError}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Submit Button */}
       {connected ? (
         <Button
@@ -539,7 +686,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
               Processing...
             </span>
           ) : (
-            `Buy ${selectedOutcome === 'yes' ? 'Yes' : 'No'}${amount ? ` for ${amount} ALEO` : ''}`
+            `Buy ${selectedOutcome === 'yes' ? 'Yes' : 'No'}${amount ? ` for ${amount} ${market.tokenSymbol}` : ''}`
           )}
         </Button>
       ) : (

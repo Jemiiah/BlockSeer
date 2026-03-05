@@ -21,21 +21,28 @@ if (process.env.PGSSL === "true") {
     DB_CONFIG.ssl = { rejectUnauthorized: false };
 }
 
-export const PROGRAM_ID = "manifoldpredictionv4.aleo";
+export const PROGRAM_ID = "manifoldpredictionv5.aleo";
 export const ALEO_BROADCAST_URL = `${ALEO_NODE_URL}/testnet/transaction/broadcast`;
 
 // Costs
 export const CREATE_POOL_FEE = 2_000_000;
 export const LOCK_POOL_FEE = 500_000;
 export const RESOLVE_POOL_FEE = 1_000_000;
+export const CANCEL_POOL_FEE = 500_000;
 
 // Reveal window: how long users have to reveal after pool locks (seconds)
 export const REVEAL_WINDOW_SECONDS = 3600; // 1 hour
 
-// Embedded Program Source (v4 — trustless commit-reveal, user-driven reveals)
-export const PROGRAM_SOURCE = `program manifoldpredictionv4.aleo;
+// Dispute window: how long users can dispute after resolution (seconds)
+export const DISPUTE_WINDOW_SECONDS = 86400; // 24 hours
 
-import credits.aleo;
+// Protocol fee
+export const PROTOCOL_FEE_BPS = 200; // 2%
+
+// Embedded Program Source (v5 — stablecoin, fees, disputes, self-claim)
+export const PROGRAM_SOURCE = `import credits.aleo;
+import token_registry.aleo;
+program manifoldpredictionv5.aleo;
 
 record Prediction:
     owner as address.private;
@@ -44,11 +51,7 @@ record Prediction:
     option as u64.private;
     amount as u64.private;
     claimed as boolean.private;
-
-record Winnings:
-    prediction_id as field.private;
-    owner as address.private;
-    amount_won as u64.private;
+    token_id as field.private;
 
 struct Pool:
     id as field;
@@ -64,6 +67,8 @@ struct Pool:
     total_no_of_stakes as u64;
     total_no_of_stakes_option_a as u64;
     total_no_of_stakes_option_b as u64;
+    token_id as field;
+    resolved_at as u64;
 
 struct Default:
     id as u32;
@@ -79,6 +84,18 @@ mapping total_predictions:
 mapping commitments:
     key as field.public;
     value as field.public;
+
+mapping claims:
+    key as field.public;
+    value as boolean.public;
+
+mapping dispute_count:
+    key as field.public;
+    value as u64.public;
+
+mapping pool_balance:
+    key as field.public;
+    value as u64.public;
 
 mapping pools_id__:
     key as u32.public;

@@ -51,6 +51,9 @@ interface Position {
   status: 'active' | 'closed';
   result?: 'won' | 'lost' | 'pending';
   closedAt?: string;
+  tokenSymbol: string;
+  isCancelled: boolean;
+  isClaimable: boolean;
 }
 
 interface PortfolioProps {
@@ -110,6 +113,9 @@ function predictionsToPositions(
       plPercent: pred.profitPercent,
       status,
       result,
+      tokenSymbol: pred.tokenSymbol,
+      isCancelled: pred.isCancelled,
+      isClaimable: pred.isClaimable,
     };
   });
 }
@@ -188,17 +194,20 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
     setTimeout(() => setSyncSuccess(true), 1500);
   }, [refetchPredictions]);
 
+  // Determine primary token for stats — use first prediction's token or default to ALEO
+  const primaryToken = userPredictions.length > 0 ? userPredictions[0].tokenSymbol : 'ALEO';
+
   const statCards = [
-    { label: 'Total Staked', value: `${stats.totalValue.toFixed(2)} ALEO`, valueClass: 'text-white' },
+    { label: 'Total Staked', value: `${stats.totalValue.toFixed(2)} ${primaryToken}`, valueClass: 'text-white' },
     {
       label: 'Net P&L',
-      value: `${stats.netPL >= 0 ? '+' : ''}${stats.netPL.toFixed(2)} ALEO`,
+      value: `${stats.netPL >= 0 ? '+' : ''}${stats.netPL.toFixed(2)} ${primaryToken}`,
       valueClass: stats.netPL >= 0 ? 'text-emerald-400' : 'text-red-400',
       sub: `(${stats.netPLPercent >= 0 ? '+' : ''}${stats.netPLPercent.toFixed(1)}%)`,
       subClass: stats.netPL >= 0 ? 'text-emerald-400/70' : 'text-red-400/70',
     },
-    { label: 'Biggest Win', value: `+${stats.biggestWin.toFixed(2)} ALEO`, valueClass: 'text-yellow-400' },
-    { label: 'Volume Traded', value: `${stats.totalVolume.toFixed(2)} ALEO`, valueClass: 'text-white' },
+    { label: 'Biggest Win', value: `+${stats.biggestWin.toFixed(2)} ${primaryToken}`, valueClass: 'text-yellow-400' },
+    { label: 'Volume Traded', value: `${stats.totalVolume.toFixed(2)} ${primaryToken}`, valueClass: 'text-white' },
     { label: 'Total Trades', value: `${stats.totalTrades}`, valueClass: 'text-white' },
     {
       label: 'Active',
@@ -470,7 +479,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                       </td>
                     )}
                     <td className="px-6 py-4 text-sm text-white text-right font-mono font-medium">
-                      {position.value.toFixed(2)} ALEO
+                      {position.value.toFixed(2)} {position.tokenSymbol}
                     </td>
                     <td
                       className={cn(
@@ -482,7 +491,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                         {position.pl > 0 && <ArrowUpRight className="w-3 h-3" />}
                         {position.pl < 0 && <ArrowDownRight className="w-3 h-3" />}
                         <span>
-                          {position.pl >= 0 ? '+' : ''}{position.pl.toFixed(2)} ALEO
+                          {position.pl >= 0 ? '+' : ''}{position.pl.toFixed(2)} {position.tokenSymbol}
                         </span>
                       </div>
                       <div className="text-xs opacity-70">
@@ -492,23 +501,38 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                     </td>
                     {activeTab === 'closed' && (
                       <td className="px-6 py-4 text-center">
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold',
-                            position.result === 'won'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : position.result === 'lost'
+                        <div className="flex flex-col items-center gap-1">
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold',
+                              position.isCancelled
                                 ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                : 'bg-white/[0.06] text-[hsl(230,10%,50%)] border border-white/[0.08]'
+                                : position.result === 'won'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  : position.result === 'lost'
+                                    ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                    : 'bg-white/[0.06] text-[hsl(230,10%,50%)] border border-white/[0.08]'
+                            )}
+                          >
+                            {position.isCancelled
+                              ? 'Cancelled'
+                              : position.result === 'won'
+                                ? <><CheckCircle2 className="w-3 h-3" /> Won</>
+                                : position.result === 'lost'
+                                  ? 'Lost'
+                                  : 'Pending'}
+                          </span>
+                          {position.isClaimable && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              Claimable
+                            </span>
                           )}
-                        >
-                          {position.result === 'won' && <CheckCircle2 className="w-3 h-3" />}
-                          {position.result === 'won'
-                            ? 'Won'
-                            : position.result === 'lost'
-                              ? 'Lost'
-                              : 'Pending'}
-                        </span>
+                          {position.isCancelled && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                              Refundable
+                            </span>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>

@@ -16,28 +16,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}Building manifoldpredictionv4.aleo...${NC}"
+echo -e "${YELLOW}Building manifoldpredictionv5.aleo...${NC}"
 
 leo clean
 leo build || {
-    echo -e "${RED}Failed to build manifoldpredictionv4.aleo${NC}"
+    echo -e "${RED}Failed to build manifoldpredictionv5.aleo${NC}"
     exit 1
 }
 
-echo -e "${YELLOW}Deploying manifoldpredictionv4.aleo to Testnet...${NC}"
+echo -e "${YELLOW}Deploying manifoldpredictionv5.aleo to Testnet...${NC}"
 
-leo deploy --network testnet --endpoint https://api.explorer.provable.com/v1 --broadcast --save "./deploy_tx" --print || {
-    echo -e "${RED}Failed to deploy manifoldpredictionv4.aleo${NC}"
+leo deploy --network testnet --endpoint https://api.explorer.provable.com/v1 --broadcast --save "./deploy_tx" --print -y || {
+    echo -e "${RED}Failed to deploy manifoldpredictionv5.aleo${NC}"
     exit 1
 }
 
 echo -e "${GREEN}Contract deployed successfully${NC}"
-
-echo -e "${YELLOW}Initializing Treasury...${NC}"
-
-leo execute initialize --network testnet --endpoint https://api.explorer.provable.com/v1 --broadcast || {
-    echo -e "${RED}Failed to initialize treasury${NC}"
-    exit 1
-}
-
-echo -e "${GREEN}Treasury initialized successfully${NC}"

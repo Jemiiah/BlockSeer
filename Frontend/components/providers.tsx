@@ -13,7 +13,7 @@ import { GalileoWalletAdapter } from '@provablehq/aleo-wallet-adaptor-prove-alph
 
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css';
 
-const PROGRAM_ID = 'manifoldpredictionv4.aleo';
+const PROGRAM_ID = 'manifoldpredictionv5.aleo';
 const CREDITS_PROGRAM = 'credits.aleo';
 
 // Must be stable references — the wallet adapter has an effect that

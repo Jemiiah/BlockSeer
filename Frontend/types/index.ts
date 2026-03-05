@@ -18,6 +18,14 @@ export interface Market {
   revealWindowEnd: number | null; // Unix timestamp
   volumeRaw: number;
   endTimestamp: number;
+  // v5 fields
+  tokenId: string; // '0' = ALEO, else ARC-21 token_id
+  tokenSymbol: string; // 'ALEO', 'USDCx', 'USAD'
+  winningOption: number | null; // 1 or 2, null if unresolved
+  disputeWindowEnd: number | null; // Unix timestamp
+  isInDisputeWindow: boolean;
+  isCancelled: boolean;
+  isClaimable: boolean; // resolved + dispute window passed + not cancelled
 }
 
 export type MarketCategory = 'Crypto' | 'Tech' | 'AI' | 'DeFi';

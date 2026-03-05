@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { fetchAllMarkets, ApiMarket } from '@/lib/api-client';
 import { getPool, AleoPool } from '@/lib/aleo-client';
+import { getTokenSymbol, formatTokenAmount } from '@/lib/tokens';
 
 // Program ID
-const PROGRAM_ID = 'manifoldpredictionv4.aleo';
+const PROGRAM_ID = 'manifoldpredictionv5.aleo';
 
 // Prediction record structure from Leo program
 export interface PredictionRecord {
@@ -16,6 +17,7 @@ export interface PredictionRecord {
   option: number; // 1 or 2
   amount: number; // in microcredits
   claimed: boolean;
+  token_id: string; // '0' = ALEO, else ARC-21 token_id
 }
 
 // Parsed prediction for display
@@ -24,13 +26,17 @@ export interface UserPrediction {
   poolId: string;
   poolName: string;
   outcome: 'Yes' | 'No';
-  amount: number; // in ALEO
+  amount: number; // in human-readable units (ALEO or token)
   claimed: boolean;
   status: 'active' | 'won' | 'lost' | 'pending';
-  profit: number; // in ALEO (positive = won, negative = lost, 0 = pending)
+  profit: number; // in human-readable units (positive = won, negative = lost, 0 = pending)
   profitPercent: number; // percentage gain/loss
   marketTitle: string; // human-readable market name
-  marketStatus: 'pending' | 'locked' | 'resolved';
+  marketStatus: 'pending' | 'locked' | 'resolved' | 'disputed' | 'cancelled';
+  tokenId: string;
+  tokenSymbol: string;
+  isCancelled: boolean;
+  isClaimable: boolean;
 }
 
 // Market + on-chain data used during enrichment
@@ -85,6 +91,7 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
         option: parseU64(obj.option),
         amount: parseU64(obj.amount),
         claimed: parseBool(obj.claimed),
+        token_id: parseField(obj.token_id || '0field'),
       };
     }
 
@@ -97,6 +104,7 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
       option: parseU64(dataObj.option),
       amount: parseU64(dataObj.amount),
       claimed: parseBool(dataObj.claimed),
+      token_id: parseField(dataObj.token_id || '0field'),
     };
   } catch (error) {
     console.error('Error parsing record:', error, record);
@@ -104,13 +112,17 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
   }
 }
 
+// Protocol fee: 2% deducted from winnings
+const PROTOCOL_FEE_BPS = 200;
+const BPS_DENOMINATOR = 10000;
+
 // Compute P&L for a prediction given on-chain pool data
 function computePnL(
   record: PredictionRecord,
   market: ApiMarket | null,
   pool: AleoPool | null
 ): { profit: number; profitPercent: number } {
-  const amountInAleo = record.amount / 1_000_000;
+  const amountHuman = formatTokenAmount(record.amount, record.token_id);
 
   // Not resolved or no data — no P&L yet
   if (!market || market.status !== 'resolved' || !pool) {
@@ -121,7 +133,6 @@ function computePnL(
   const winningOption = pool.winning_option;
 
   if (winningOption === 0) {
-    // No winner set yet (shouldn't happen for resolved, but guard)
     return { profit: 0, profitPercent: 0 };
   }
 
@@ -135,15 +146,18 @@ function computePnL(
       return { profit: 0, profitPercent: 0 };
     }
 
-    const winnings = (record.amount * pool.total_staked) / winningStakes;
-    const winningsInAleo = winnings / 1_000_000;
-    const profit = winningsInAleo - amountInAleo;
-    const profitPercent = amountInAleo > 0 ? (profit / amountInAleo) * 100 : 0;
+    const grossWinnings = (record.amount * pool.total_staked) / winningStakes;
+    // Deduct 2% protocol fee
+    const fee = (grossWinnings * PROTOCOL_FEE_BPS) / BPS_DENOMINATOR;
+    const netWinnings = grossWinnings - fee;
+    const netWinningsHuman = formatTokenAmount(netWinnings, record.token_id);
+    const profit = netWinningsHuman - amountHuman;
+    const profitPercent = amountHuman > 0 ? (profit / amountHuman) * 100 : 0;
 
     return { profit, profitPercent };
   } else {
     // User lost: total loss
-    return { profit: -amountInAleo, profitPercent: -100 };
+    return { profit: -amountHuman, profitPercent: -100 };
   }
 }
 
@@ -153,16 +167,21 @@ function toUserPrediction(
   index: number,
   enrichment: EnrichmentData
 ): UserPrediction {
-  const amountInAleo = record.amount / 1_000_000;
+  const amountHuman = formatTokenAmount(record.amount, record.token_id);
   const { market, pool } = enrichment;
   const { profit, profitPercent } = computePnL(record, market, pool);
 
   // Derive market status
-  const marketStatus: 'pending' | 'locked' | 'resolved' = market?.status ?? 'pending';
+  const marketStatus: 'pending' | 'locked' | 'resolved' | 'disputed' | 'cancelled' =
+    market?.status ?? 'pending';
+
+  const isCancelled = market?.cancelled ?? false;
 
   // Derive display status
   let status: 'active' | 'won' | 'lost' | 'pending';
-  if (marketStatus === 'resolved') {
+  if (isCancelled) {
+    status = 'pending'; // Refundable
+  } else if (marketStatus === 'resolved') {
     if (profit > 0) {
       status = 'won';
     } else {
@@ -172,6 +191,19 @@ function toUserPrediction(
     status = 'active';
   }
 
+  const tokenSymbol = getTokenSymbol(record.token_id);
+
+  // Claimable: resolved, dispute window passed, not cancelled
+  const now = Math.floor(Date.now() / 1000);
+  const disputeWindowEnd = market?.dispute_window_end
+    ? parseInt(String(market.dispute_window_end), 10)
+    : null;
+  const isClaimable = marketStatus === 'resolved'
+    && !isCancelled
+    && disputeWindowEnd !== null
+    && now >= disputeWindowEnd
+    && !record.claimed;
+
   // Market title: use API title or fall back to truncated pool ID
   const marketTitle = market?.title || `Pool ${record.pool_id.slice(0, 8)}...`;
 
@@ -180,13 +212,17 @@ function toUserPrediction(
     poolId: record.pool_id,
     poolName: marketTitle,
     outcome: record.option === 1 ? 'Yes' : 'No',
-    amount: amountInAleo,
+    amount: amountHuman,
     claimed: record.claimed,
     status,
     profit,
     profitPercent,
     marketTitle,
     marketStatus,
+    tokenId: record.token_id,
+    tokenSymbol,
+    isCancelled,
+    isClaimable,
   };
 }
 

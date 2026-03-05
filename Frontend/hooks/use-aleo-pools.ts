@@ -7,6 +7,7 @@ import { fetchAllMarkets, ApiMarket } from '@/lib/api-client';
 import { getPool, AleoPool } from '@/lib/aleo-client';
 import { calculateOdds } from '@/lib/utils';
 import { inferCategory } from '@/lib/category-map';
+import { getTokenSymbol, formatTokenAmount, getTokenConfig } from '@/lib/tokens';
 
 // Convert API market to Market type, optionally enriched with on-chain data
 function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market {
@@ -20,6 +21,8 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
 
   // Odds are revealed when: pool is resolved, OR pool is locked and reveal window has ended
   const oddsRevealed = market.status === 'resolved'
+    || market.status === 'disputed'
+    || market.status === 'cancelled'
     || (market.status === 'locked' && revealWindowEnd !== null && now >= revealWindowEnd);
 
   const optionAStakes = onChain ? onChain.option_a_stakes : parseInt(market.option_a_stakes || '0', 10);
@@ -37,7 +40,7 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     status = 'live';
   } else if (market.status === 'locked') {
     status = 'upcoming';
-  } else if (market.status === 'resolved') {
+  } else if (market.status === 'resolved' || market.status === 'disputed' || market.status === 'cancelled') {
     status = 'resolved';
   }
 
@@ -49,13 +52,29 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     year: 'numeric',
   });
 
+  // Token denomination
+  const tokenId = market.token_id || '0';
+  const tokenSymbol = getTokenSymbol(tokenId);
+  const tokenConfig = getTokenConfig(tokenId);
   const totalStaked = onChain ? onChain.total_staked : parseInt(market.total_staked || '0', 10);
-  const volumeInAleo = totalStaked / 1_000_000;
-  const volume = volumeInAleo >= 1000
-    ? `${(volumeInAleo / 1000).toFixed(1)}K ALEO`
-    : `${volumeInAleo.toFixed(2)} ALEO`;
+  const volumeHuman = formatTokenAmount(totalStaked, tokenId);
+  const volume = volumeHuman >= 1000
+    ? `${(volumeHuman / 1000).toFixed(1)}K ${tokenSymbol}`
+    : `${volumeHuman.toFixed(2)} ${tokenSymbol}`;
 
   const subtitle = `${market.option_a_label} vs ${market.option_b_label}`;
+
+  // v5 fields: dispute window, winning option, cancelled, claimable
+  const disputeWindowEnd = market.dispute_window_end ?? null;
+  const isInDisputeWindow = market.status === 'resolved'
+    && disputeWindowEnd !== null
+    && now < disputeWindowEnd;
+  const isCancelled = market.cancelled ?? false;
+  const winningOption = market.winning_option ?? null;
+  const isClaimable = market.status === 'resolved'
+    && !isCancelled
+    && disputeWindowEnd !== null
+    && now >= disputeWindowEnd;
 
   return {
     id: market.market_id,
@@ -75,8 +94,15 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     oddsRevealed,
     isInRevealWindow,
     revealWindowEnd,
-    volumeRaw: volumeInAleo,
+    volumeRaw: volumeHuman,
     endTimestamp: deadlineTimestamp,
+    tokenId,
+    tokenSymbol,
+    winningOption,
+    disputeWindowEnd,
+    isInDisputeWindow,
+    isCancelled,
+    isClaimable,
   };
 }
 

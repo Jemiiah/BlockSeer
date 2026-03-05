@@ -42,6 +42,11 @@ export async function initDb(): Promise<void> {
         await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS option_b_label TEXT DEFAULT 'NO'`);
         await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS on_chain BOOLEAN DEFAULT FALSE`);
         await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS reveal_window_end BIGINT`);
+        // v5 columns
+        await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS token_id TEXT DEFAULT '0'`);
+        await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS dispute_window_end BIGINT`);
+        await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS winning_option INTEGER`);
+        await pool.query(`ALTER TABLE markets ADD COLUMN IF NOT EXISTS cancelled BOOLEAN DEFAULT FALSE`);
 
         // Predictions table for blind betting — tracks predictions off-chain
         await pool.query(`
@@ -55,7 +60,7 @@ export async function initDb(): Promise<void> {
             )
         `);
 
-        console.log("📦 Database initialized successfully (PostgreSQL).");
+        console.log("Database initialized successfully (PostgreSQL).");
     } catch (err) {
         console.error("Database initialization error:", (err as Error).message);
         throw err;
@@ -70,11 +75,12 @@ export async function addMarket(
     metricType: string = "eth_staking_rate",
     description: string = "",
     optionALabel: string = "YES",
-    optionBLabel: string = "NO"
+    optionBLabel: string = "NO",
+    tokenId: string = "0"
 ): Promise<void> {
     const query = `
-    INSERT INTO markets (market_id, title, deadline, threshold, status, metric_type, description, option_a_label, option_b_label)
-    VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8)
+    INSERT INTO markets (market_id, title, deadline, threshold, status, metric_type, description, option_a_label, option_b_label, token_id)
+    VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7, $8, $9)
     ON CONFLICT (market_id) DO UPDATE SET
         title = EXCLUDED.title,
         deadline = EXCLUDED.deadline,
@@ -82,11 +88,12 @@ export async function addMarket(
         metric_type = EXCLUDED.metric_type,
         description = EXCLUDED.description,
         option_a_label = EXCLUDED.option_a_label,
-        option_b_label = EXCLUDED.option_b_label
+        option_b_label = EXCLUDED.option_b_label,
+        token_id = EXCLUDED.token_id
     `;
     try {
-        await pool.query(query, [marketId, title, deadline, threshold, metricType, description, optionALabel, optionBLabel]);
-        console.log(`📝 Market ${marketId} added to DB (Metric: ${metricType}).`);
+        await pool.query(query, [marketId, title, deadline, threshold, metricType, description, optionALabel, optionBLabel, tokenId]);
+        console.log(`Market ${marketId} added to DB (Metric: ${metricType}, Token: ${tokenId}).`);
     } catch (err) {
         console.error(`Error adding market ${marketId}:`, (err as Error).message);
         throw err;
@@ -119,7 +126,7 @@ export async function markLocked(marketId: string): Promise<void> {
     const query = `UPDATE markets SET status = 'locked' WHERE market_id = $1`;
     try {
         await pool.query(query, [marketId]);
-        console.log(`🔒 Market ${marketId} marked as locked in DB.`);
+        console.log(`Market ${marketId} marked as locked in DB.`);
     } catch (err) {
         console.error(`Error marking market ${marketId} as locked:`, (err as Error).message);
         throw err;
@@ -137,6 +144,61 @@ export async function markResolved(marketId: string): Promise<void> {
     }
 }
 
+export async function markDisputed(marketId: string): Promise<void> {
+    const query = `UPDATE markets SET status = 'disputed' WHERE market_id = $1`;
+    try {
+        await pool.query(query, [marketId]);
+        console.log(`Market ${marketId} marked as disputed.`);
+    } catch (err) {
+        console.error(`Error marking market ${marketId} as disputed:`, (err as Error).message);
+        throw err;
+    }
+}
+
+export async function markCancelled(marketId: string): Promise<void> {
+    const query = `UPDATE markets SET status = 'cancelled', cancelled = TRUE WHERE market_id = $1`;
+    try {
+        await pool.query(query, [marketId]);
+        console.log(`Market ${marketId} marked as cancelled.`);
+    } catch (err) {
+        console.error(`Error marking market ${marketId} as cancelled:`, (err as Error).message);
+        throw err;
+    }
+}
+
+export async function setWinningOption(marketId: string, winningOption: number): Promise<void> {
+    const query = `UPDATE markets SET winning_option = $1 WHERE market_id = $2`;
+    try {
+        await pool.query(query, [winningOption, marketId]);
+        console.log(`Market ${marketId} winning option set to ${winningOption}.`);
+    } catch (err) {
+        console.error(`Error setting winning option for ${marketId}:`, (err as Error).message);
+        throw err;
+    }
+}
+
+export async function setDisputeWindowEnd(marketId: string, timestamp: number): Promise<void> {
+    const query = `UPDATE markets SET dispute_window_end = $1 WHERE market_id = $2`;
+    try {
+        await pool.query(query, [timestamp, marketId]);
+        console.log(`Market ${marketId} dispute window ends at ${new Date(timestamp * 1000).toISOString()}.`);
+    } catch (err) {
+        console.error(`Error setting dispute window for ${marketId}:`, (err as Error).message);
+        throw err;
+    }
+}
+
+export async function getDisputedMarkets(): Promise<MarketRow[]> {
+    try {
+        const query = `SELECT * FROM markets WHERE status = 'disputed'`;
+        const { rows } = await pool.query(query);
+        return rows;
+    } catch (err) {
+        console.error("Error fetching disputed markets:", (err as Error).message);
+        throw err;
+    }
+}
+
 export async function updateMarketStats(
     marketId: string,
     totalStaked: number,
@@ -144,13 +206,13 @@ export async function updateMarketStats(
     optionBStakes: number
 ): Promise<void> {
     const query = `
-    UPDATE markets 
-    SET total_staked = $1, option_a_stakes = $2, option_b_stakes = $3 
+    UPDATE markets
+    SET total_staked = $1, option_a_stakes = $2, option_b_stakes = $3
     WHERE market_id = $4
     `;
     try {
         await pool.query(query, [totalStaked, optionAStakes, optionBStakes, marketId]);
-        console.log(`📊 Updated on-chain stats for market ${marketId}.`);
+        console.log(`Updated on-chain stats for market ${marketId}.`);
     } catch (err) {
         console.error(`Error updating stats for market ${marketId}:`, (err as Error).message);
         throw err;
@@ -163,13 +225,13 @@ export async function updateMarketMetadata(
     optionBLabel: string
 ): Promise<void> {
     const query = `
-    UPDATE markets 
-    SET option_a_label = $1, option_b_label = $2 
+    UPDATE markets
+    SET option_a_label = $1, option_b_label = $2
     WHERE market_id = $3
     `;
     try {
         await pool.query(query, [optionALabel, optionBLabel, marketId]);
-        console.log(`🏷️ Updated labels for market ${marketId}.`);
+        console.log(`Updated labels for market ${marketId}.`);
     } catch (err) {
         console.error(`Error updating metadata for market ${marketId}:`, (err as Error).message);
         throw err;
@@ -189,7 +251,7 @@ export async function getMarketById(marketId: string): Promise<MarketRow | null>
 
 export async function getMarketsNotOnChain(): Promise<MarketRow[]> {
     try {
-        const query = `SELECT * FROM markets WHERE on_chain = FALSE OR on_chain IS NULL`;
+        const query = `SELECT * FROM markets WHERE (on_chain = FALSE OR on_chain IS NULL) AND status = 'pending'`;
         const { rows } = await pool.query(query);
         return rows;
     } catch (err) {
@@ -202,7 +264,7 @@ export async function markOnChain(marketId: string): Promise<void> {
     const query = `UPDATE markets SET on_chain = TRUE WHERE market_id = $1`;
     try {
         await pool.query(query, [marketId]);
-        console.log(`⛓️ Market ${marketId} marked as on-chain in DB.`);
+        console.log(`Market ${marketId} marked as on-chain in DB.`);
     } catch (err) {
         console.error(`Error marking market ${marketId} as on-chain:`, (err as Error).message);
         throw err;
@@ -225,7 +287,7 @@ export async function addPrediction(
     `;
     try {
         await pool.query(query, [predictionId, marketId, option, amount, txId]);
-        console.log(`📝 Prediction ${predictionId} recorded for market ${marketId}.`);
+        console.log(`Prediction ${predictionId} recorded for market ${marketId}.`);
     } catch (err) {
         console.error(`Error adding prediction ${predictionId}:`, (err as Error).message);
         throw err;

@@ -169,6 +169,11 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-blue-500/30 bg-blue-500/[0.1] text-blue-400">
               {market.category}
             </span>
+            {market.tokenSymbol && market.tokenSymbol !== 'ALEO' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-violet-500/30 bg-violet-500/[0.1] text-violet-400">
+                {market.tokenSymbol}
+              </span>
+            )}
             <span className="text-xs text-white/30 font-medium">
               {activeIndex + 1} / {trendingMarkets.length}
             </span>

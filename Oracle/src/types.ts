@@ -4,7 +4,7 @@ export interface MarketRow {
   title: string;
   deadline: string; // BIGINT comes back as string from pg
   threshold: string; // DECIMAL comes back as string from pg
-  status: 'pending' | 'locked' | 'resolved';
+  status: 'pending' | 'locked' | 'resolved' | 'disputed' | 'cancelled';
   metric_type: string;
   description: string;
   option_a_label: string;
@@ -14,6 +14,10 @@ export interface MarketRow {
   option_b_stakes: string;
   on_chain: boolean;
   reveal_window_end: string | null;
+  token_id: string;
+  dispute_window_end: string | null;
+  winning_option: number | null;
+  cancelled: boolean;
 }
 
 /** Database row for a prediction */

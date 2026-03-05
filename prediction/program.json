@@ -1,12 +1,17 @@
 {
-  "program": "manifoldpredictionv4.aleo",
+  "program": "manifoldpredictionv5.aleo",
   "version": "0.1.0",
-  "description": "",
+  "description": "Privacy-first prediction market with stablecoin support, fees, disputes, and self-claim",
   "license": "MIT",
   "leo": "3.4.0",
   "dependencies": [
     {
       "name": "credits.aleo",
+      "location": "network",
+      "network": "testnet"
+    },
+    {
+      "name": "token_registry.aleo",
       "location": "network",
       "network": "testnet"
     }

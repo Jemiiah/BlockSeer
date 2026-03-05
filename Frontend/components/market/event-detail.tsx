@@ -11,12 +11,15 @@ import {
   ChevronDown,
   Zap,
   Eye,
+  ShieldAlert,
+  Info,
 } from 'lucide-react';
 import { Market } from '@/types';
 import { Badge } from '@/components/ui';
 import { TradingPanel } from './trading-panel';
 import { formatNumber } from '@/lib/utils';
 import { useOnChainPool } from '@/hooks/use-on-chain-pool';
+import { formatTokenAmount } from '@/lib/tokens';
 
 interface EventDetailProps {
   market: Market;
@@ -32,7 +35,7 @@ export function EventDetail({ market, onBack }: EventDetailProps) {
 
   const traderCount = onChainPool ? onChainPool.total_no_of_stakes : market.traders;
   const volume = onChainPool
-    ? `${(onChainPool.total_staked / 1_000_000).toFixed(2)} ALEO`
+    ? `${formatTokenAmount(onChainPool.total_staked, market.tokenId).toFixed(2)} ${market.tokenSymbol}`
     : market.volume;
 
   // Animate tab indicator to follow active tab
@@ -75,7 +78,25 @@ export function EventDetail({ market, onBack }: EventDetailProps) {
 
             <div className="relative">
               <div className="flex items-start justify-between mb-4">
-                <Badge>{market.category}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge>{market.category}</Badge>
+                  {market.tokenSymbol && market.tokenSymbol !== 'ALEO' && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-violet-500/30 bg-violet-500/[0.1] text-violet-400">
+                      {market.tokenSymbol}
+                    </span>
+                  )}
+                  {market.isCancelled && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-red-500/30 bg-red-500/[0.1] text-red-400">
+                      Cancelled
+                    </span>
+                  )}
+                  {market.isInDisputeWindow && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-500/30 bg-amber-500/[0.1] text-amber-400">
+                      <ShieldAlert className="w-3 h-3" />
+                      Dispute Window
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-4">
                   {market.status === 'live' && (
                     <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
@@ -120,6 +141,10 @@ export function EventDetail({ market, onBack }: EventDetailProps) {
                 <span className="flex items-center gap-2 text-[hsl(230,10%,45%)]">
                   <BarChart3 className="w-4 h-4" />
                   {volume} volume
+                </span>
+                <span className="flex items-center gap-2 text-[hsl(230,10%,45%)]">
+                  <Info className="w-4 h-4" />
+                  2% fee on winnings
                 </span>
               </div>
             </div>

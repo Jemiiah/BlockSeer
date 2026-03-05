@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { TrendingUp, TrendingDown, Clock, DollarSign, Lock, Timer } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, DollarSign, Lock, Timer, ShieldAlert, XCircle } from 'lucide-react';
 import { Market } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +40,8 @@ export function MarketCard({ market, index = 0 }: MarketCardProps) {
   const isPositive = market.change >= 0;
   const isLive = market.status === 'live';
   const isResolved = market.status === 'resolved';
+  const isDisputed = market.isInDisputeWindow;
+  const isCancelled = market.isCancelled;
 
   return (
     <Link
@@ -56,20 +58,36 @@ export function MarketCard({ market, index = 0 }: MarketCardProps) {
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
-            {market.category}
-          </span>
-          {isLive && (
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
+              {market.category}
+            </span>
+            {market.tokenSymbol && market.tokenSymbol !== 'ALEO' && (
+              <span className="inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/[0.1] px-2 py-0.5 text-[10px] font-semibold text-violet-400">
+                {market.tokenSymbol}
+              </span>
+            )}
+          </div>
+          {isCancelled ? (
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-red-400">
+              <XCircle className="w-3 h-3" />
+              Cancelled
+            </span>
+          ) : isDisputed ? (
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-amber-400">
+              <ShieldAlert className="w-3 h-3" />
+              Disputed
+            </span>
+          ) : isLive ? (
             <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-400">
               <span className="block w-1.5 h-1.5 bg-emerald-400 rounded-full" />
               Live
             </span>
-          )}
-          {isResolved && (
+          ) : isResolved ? (
             <span className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-400">
               Ended
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Title */}
