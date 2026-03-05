@@ -8,7 +8,8 @@
     "cli": "npx tsx src/cli.ts",
     "worker": "npx tsx src/worker.ts",
     "api": "npx tsx src/api.ts",
-    "load-markets": "npx tsx src/scripts/load_markets.ts"
+    "load-markets": "npx tsx src/scripts/load_markets.ts",
+    "load-markets-db": "npx tsx src/scripts/load_markets_db_only.ts"
   },
   "keywords": [],
   "author": "",
