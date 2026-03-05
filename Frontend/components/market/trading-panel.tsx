@@ -276,22 +276,62 @@ export function TradingPanel({ market }: TradingPanelProps) {
         </div>
       )}
 
-      {/* Outcome Selection */}
+      {/* Outcome Selection - Large Buy Buttons */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <OutcomeButton
-          type="yes"
-          price={market.yesPrice}
-          isSelected={selectedOutcome === 'yes'}
+        <button
           onClick={() => setSelectedOutcome('yes')}
-          hidden={!market.oddsRevealed}
-        />
-        <OutcomeButton
-          type="no"
-          price={market.noPrice}
-          isSelected={selectedOutcome === 'no'}
+          className={cn(
+            'relative py-8 px-4 rounded-xl font-semibold transition-all duration-200 border-2',
+            selectedOutcome === 'yes'
+              ? 'bg-blue-500/15 border-blue-500 shadow-lg shadow-blue-500/20'
+              : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.12]'
+          )}
+        >
+          <div className="text-sm font-medium mb-2 text-white/60">Buy</div>
+          <div className="text-2xl font-bold text-white mb-2">Yes</div>
+          <div className={cn(
+            "text-xl font-mono font-semibold",
+            selectedOutcome === 'yes' ? 'text-blue-400' : 'text-white/70'
+          )}>
+            {market.oddsRevealed ? `${market.yesPrice}¢` : '--'}
+          </div>
+          {selectedOutcome === 'yes' && (
+            <div className="absolute top-3 right-3">
+              <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </button>
+        <button
           onClick={() => setSelectedOutcome('no')}
-          hidden={!market.oddsRevealed}
-        />
+          className={cn(
+            'relative py-8 px-4 rounded-xl font-semibold transition-all duration-200 border-2',
+            selectedOutcome === 'no'
+              ? 'bg-red-500/15 border-red-500 shadow-lg shadow-red-500/20'
+              : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.12]'
+          )}
+        >
+          <div className="text-sm font-medium mb-2 text-white/60">Buy</div>
+          <div className="text-2xl font-bold text-white mb-2">No</div>
+          <div className={cn(
+            "text-xl font-mono font-semibold",
+            selectedOutcome === 'no' ? 'text-red-400' : 'text-white/70'
+          )}>
+            {market.oddsRevealed ? `${market.noPrice}¢` : '--'}
+          </div>
+          {selectedOutcome === 'no' && (
+            <div className="absolute top-3 right-3">
+              <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </button>
       </div>
 
       {/* Amount Input */}
@@ -486,7 +526,12 @@ export function TradingPanel({ market }: TradingPanelProps) {
         <Button
           onClick={handleTrade}
           disabled={isLoading || !amount || parseFloat(amount) <= 0 || !!poolExpired}
-          className="w-full py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={cn(
+            "w-full py-6 text-lg font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200",
+            selectedOutcome === 'yes'
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30'
+              : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
+          )}
         >
           {isLoading ? (
             <span className="flex items-center gap-2">
@@ -494,14 +539,14 @@ export function TradingPanel({ market }: TradingPanelProps) {
               Processing...
             </span>
           ) : (
-            `Predict ${selectedOutcome === 'yes' ? 'Yes' : 'No'}`
+            `Buy ${selectedOutcome === 'yes' ? 'Yes' : 'No'}${amount ? ` for ${amount} ALEO` : ''}`
           )}
         </Button>
       ) : (
         <Button
           onClick={handleConnectWallet}
           className={cn(
-            "w-full py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/20",
+            "w-full py-6 text-lg font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/30",
             showConnecting && "opacity-50"
           )}
         >
@@ -521,31 +566,3 @@ export function TradingPanel({ market }: TradingPanelProps) {
   );
 }
 
-interface OutcomeButtonProps {
-  type: OutcomeType;
-  price: number;
-  isSelected: boolean;
-  onClick: () => void;
-  hidden?: boolean;
-}
-
-function OutcomeButton({ type, price, isSelected, onClick, hidden }: OutcomeButtonProps) {
-  const isYes = type === 'yes';
-
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'py-4 rounded-xl font-semibold transition-all duration-200 border',
-        isSelected
-          ? isYes
-            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25 border-blue-500/50'
-            : 'bg-white/[0.12] text-white shadow-lg shadow-white/5 border-white/[0.15]'
-          : 'bg-white/[0.04] text-[hsl(230,10%,50%)] hover:bg-white/[0.08] border-white/[0.06]'
-      )}
-    >
-      <div className="text-xs opacity-70 mb-1">Buy {isYes ? 'Yes' : 'No'}</div>
-      <div className="text-xl">{hidden ? '--' : `${price}¢`}</div>
-    </button>
-  );
-}

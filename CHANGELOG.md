@@ -12,6 +12,9 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 - **Portfolio stats** — Stats cards (Net P&L, Biggest Win, Volume Traded) now compute from real enriched data instead of showing zeros
 - **Privacy notice in trading panel** — Added blue gradient notice before the Place Bet button explaining that predictions are encrypted in wallet records, only commitment hashes go on-chain, and pool totals stay hidden until reveal window (prevents front-running)
 
+### Changed
+- **Redesigned trading panel** — Replaced small outcome cards with large, prominent "Buy Yes"/"Buy No" buttons inspired by Kalshi/Polymarket. Prices now display directly on buttons (e.g. "52¢"). Selected button shows checkmark indicator. Main action button changes color based on selected outcome (blue for Yes, red for No) and shows amount in label
+
 ### Security
 - **Removed sensitive plaintext record logging** — `use-prediction.ts` was logging raw wallet records (microcredits, addresses) via `console.log`; replaced with safe `console.debug` that only logs non-sensitive metadata
 - **Admin address externalized** — Hardcoded admin address in `navbar.tsx`, `trading-panel.tsx`, and `admin/page.tsx` now reads from `NEXT_PUBLIC_ADMIN_ADDRESS` env var (falls back to current address)
