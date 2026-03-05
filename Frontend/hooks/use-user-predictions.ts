@@ -22,8 +22,7 @@ export interface UserPrediction {
   poolId: string;
   poolName: string;
   outcome: 'Yes' | 'No';
-  amount: number; // in Aleo
-  amountUsd: number; // estimated USD value
+  amount: number; // in ALEO
   claimed: boolean;
   status: 'active' | 'won' | 'lost' | 'pending';
 }
@@ -95,12 +94,8 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
 
 // Convert PredictionRecord to UserPrediction for display
 function toUserPrediction(record: PredictionRecord, index: number): UserPrediction {
-  // Convert microcredits to Aleo (1 Aleo = 1,000,000 microcredits)
+  // Convert microcredits to ALEO (1 ALEO = 1,000,000 microcredits)
   const amountInAleo = record.amount / 1_000_000;
-
-  // Estimate USD value (placeholder rate)
-  const aleoPrice = 1.5; // Placeholder price
-  const amountUsd = amountInAleo * aleoPrice;
 
   return {
     id: record.id || `prediction-${index}`,
@@ -108,9 +103,8 @@ function toUserPrediction(record: PredictionRecord, index: number): UserPredicti
     poolName: `Pool ${record.pool_id.slice(0, 8)}...`,
     outcome: record.option === 1 ? 'Yes' : 'No',
     amount: amountInAleo,
-    amountUsd,
     claimed: record.claimed,
-    status: record.claimed ? 'pending' : 'active', // Will need pool status to determine win/loss
+    status: record.claimed ? 'pending' : 'active',
   };
 }
 

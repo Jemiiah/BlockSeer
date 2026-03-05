@@ -18,8 +18,12 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 ### Removed
 - **Dead wagmi hook** — Deleted `use-wallet.ts` (wagmi/EVM) which was unused; entire app uses `@provablehq/aleo-wallet-adaptor-react`
 - **Excessive console.log** — Removed 30+ verbose debug logs from `aleo-client.ts` (blockchain fetch URLs, parsed pool data dumps, prediction counts) and cleaned up `use-prediction.ts` logging
+- **Fake activity feed** — Removed mock `0x7a3...` Ethereum-style addresses from market detail pages; removed Activity tab entirely
+- **Placeholder USD pricing** — Removed hardcoded `aleoPrice = 1.5` from portfolio; all values now display in native ALEO
+- **Dead mock data** — `lib/data.ts` (9 fake markets, fake activities, fabricated platform stats) is no longer imported anywhere
 
 ### Added
+- **Live wallet balance** — Navbar "Balance" chip reads actual ALEO balance from wallet via `requestRecords('credits.aleo')`
 - **Vertical sidebar with categories, sort & privacy status** replacing horizontal filter bar
   - Categories section with count badges (All Markets, Crypto, DeFi, Tech, AI) — purple accent for active
   - Sort By section (Highest Volume, Ending Soon, Newest, Needs Resolution) — teal accent for active
@@ -34,6 +38,9 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 - Page layout restructured to sidebar + content flex layout with `max-w-[1400px]`
 - Market grid reduced to `lg:grid-cols-2 xl:grid-cols-3` to accommodate sidebar
 - Removed category sections / upcoming / resolved groupings in favor of unified sorted grid
+- "Blind Betting Active" renamed to "Sealed Predictions" across featured market, market cards, and trading panel
+- Portfolio values display in ALEO instead of fake USD conversion
+- Market detail social proof bar shows "Total Predictions" (on-chain count) instead of fake "Recent Trades"
 
 ---
 

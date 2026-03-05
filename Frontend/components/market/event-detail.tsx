@@ -8,28 +8,25 @@ import {
   Clock,
   Users,
   BarChart3,
-  Activity as ActivityIcon,
   ChevronDown,
   Zap,
   Eye,
 } from 'lucide-react';
-import { Market, Activity } from '@/types';
+import { Market } from '@/types';
 import { Badge } from '@/components/ui';
 import { TradingPanel } from './trading-panel';
-import { ActivityFeed } from './activity-feed';
 import { formatNumber } from '@/lib/utils';
 import { useOnChainPool } from '@/hooks/use-on-chain-pool';
 
 interface EventDetailProps {
   market: Market;
-  activities: Activity[];
   onBack: () => void;
 }
 
-export function EventDetail({ market, activities, onBack }: EventDetailProps) {
+export function EventDetail({ market, onBack }: EventDetailProps) {
   const isPositive = market.change >= 0;
   const { pool: onChainPool } = useOnChainPool(market.id);
-  const [activeTab, setActiveTab] = useState<'chart' | 'activity' | 'about'>('chart');
+  const [activeTab, setActiveTab] = useState<'chart' | 'about'>('chart');
   const tabIndicatorRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<Map<string, HTMLButtonElement>>(new Map());
 
@@ -131,7 +128,7 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
           {/* Tabs */}
           <div className="relative">
             <div className="flex gap-1 relative border-b border-white/[0.06] pb-[1px]">
-              {(['chart', 'activity', 'about'] as const).map((tab) => (
+              {(['chart', 'about'] as const).map((tab) => (
                 <button
                   key={tab}
                   ref={setTabRef(tab)}
@@ -144,9 +141,8 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
                 >
                   <span className="flex items-center gap-2">
                     {tab === 'chart' && <BarChart3 className="w-4 h-4" />}
-                    {tab === 'activity' && <ActivityIcon className="w-4 h-4" />}
                     {tab === 'about' && <Eye className="w-4 h-4" />}
-                    {tab === 'chart' ? 'Price Chart' : tab === 'activity' ? 'Activity' : 'About'}
+                    {tab === 'chart' ? 'Price Chart' : 'About'}
                   </span>
                 </button>
               ))}
@@ -163,9 +159,6 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
               <TabContent active={activeTab === 'chart'}>
                 <PriceChart data={market.history} isPositive={isPositive} />
               </TabContent>
-              <TabContent active={activeTab === 'activity'}>
-                <ActivityFeed activities={activities} />
-              </TabContent>
               <TabContent active={activeTab === 'about'}>
                 <AboutSection description={market.description} resolution={market.resolution} />
               </TabContent>
@@ -175,7 +168,6 @@ export function EventDetail({ market, activities, onBack }: EventDetailProps) {
           {/* Social Proof Bar */}
           <SocialProofBar
             traderCount={traderCount}
-            activities={activities}
             yesPrice={market.yesPrice}
             noPrice={market.noPrice}
             oddsRevealed={market.oddsRevealed}
@@ -342,13 +334,11 @@ function AboutSection({ description, resolution }: { description: string; resolu
 
 function SocialProofBar({
   traderCount,
-  activities,
   yesPrice,
   noPrice,
   oddsRevealed,
 }: {
   traderCount: number;
-  activities: Activity[];
   yesPrice: number;
   noPrice: number;
   oddsRevealed: boolean;
@@ -358,28 +348,17 @@ function SocialProofBar({
 
   return (
     <div className="bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-5">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Trader Count */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
             <Users className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <p className="text-xs text-[hsl(230,10%,45%)]">Active Traders</p>
+            <p className="text-xs text-[hsl(230,10%,45%)]">Total Predictions</p>
             <p className="text-lg font-bold text-white font-mono">
               {formatNumber(traderCount)}
             </p>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-xs text-[hsl(230,10%,45%)]">Recent Trades</p>
-            <p className="text-lg font-bold text-white font-mono">{activities.length}</p>
           </div>
         </div>
 

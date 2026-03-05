@@ -85,7 +85,7 @@ function predictionsToPositions(
     shares: 0,
     avgPrice: 0.5,
     currentPrice: 0.5,
-    value: pred.amountUsd,
+    value: pred.amount,
     pl: 0,
     plPercent: 0,
     status: pred.status === 'active' ? 'active' : 'closed',
@@ -160,16 +160,16 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
   }, [refetchPredictions]);
 
   const statCards = [
-    { label: 'Portfolio Value', value: `$${stats.totalValue.toFixed(2)}`, valueClass: 'text-white' },
+    { label: 'Total Staked', value: `${stats.totalValue.toFixed(2)} ALEO`, valueClass: 'text-white' },
     {
       label: 'Net P&L',
-      value: `${stats.netPL >= 0 ? '+' : ''}$${stats.netPL.toFixed(2)}`,
+      value: `${stats.netPL >= 0 ? '+' : ''}${stats.netPL.toFixed(2)} ALEO`,
       valueClass: stats.netPL >= 0 ? 'text-emerald-400' : 'text-red-400',
       sub: `(${stats.netPLPercent >= 0 ? '+' : ''}${stats.netPLPercent.toFixed(1)}%)`,
       subClass: stats.netPL >= 0 ? 'text-emerald-400/70' : 'text-red-400/70',
     },
-    { label: 'Biggest Win', value: `+$${stats.biggestWin.toFixed(2)}`, valueClass: 'text-yellow-400' },
-    { label: 'Volume Traded', value: `$${stats.totalVolume.toFixed(2)}`, valueClass: 'text-white' },
+    { label: 'Biggest Win', value: `+${stats.biggestWin.toFixed(2)} ALEO`, valueClass: 'text-yellow-400' },
+    { label: 'Volume Traded', value: `${stats.totalVolume.toFixed(2)} ALEO`, valueClass: 'text-white' },
     { label: 'Total Trades', value: `${stats.totalTrades}`, valueClass: 'text-white' },
     {
       label: 'Active',
@@ -441,7 +441,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                       </td>
                     )}
                     <td className="px-6 py-4 text-sm text-white text-right font-mono font-medium">
-                      ${position.value.toFixed(2)}
+                      {position.value.toFixed(2)} ALEO
                     </td>
                     <td
                       className={cn(
@@ -453,7 +453,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                         {position.pl > 0 && <ArrowUpRight className="w-3 h-3" />}
                         {position.pl < 0 && <ArrowDownRight className="w-3 h-3" />}
                         <span>
-                          {position.pl >= 0 ? '+' : ''}${position.pl.toFixed(2)}
+                          {position.pl >= 0 ? '+' : ''}{position.pl.toFixed(2)} ALEO
                         </span>
                       </div>
                       <div className="text-xs opacity-70">
