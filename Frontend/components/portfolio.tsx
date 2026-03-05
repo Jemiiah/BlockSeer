@@ -77,21 +77,41 @@ const emptyStats: PortfolioStats = {
 function predictionsToPositions(
   predictions: ReturnType<typeof useUserPredictions>['predictions']
 ): Position[] {
-  return predictions.map((pred) => ({
-    id: pred.id,
-    marketId: pred.poolId,
-    market: pred.poolName,
-    outcome: pred.outcome,
-    shares: 0,
-    avgPrice: 0.5,
-    currentPrice: 0.5,
-    value: pred.amount,
-    pl: 0,
-    plPercent: 0,
-    status: pred.status === 'active' ? 'active' : 'closed',
-    result:
-      pred.status === 'won' ? 'won' : pred.status === 'lost' ? 'lost' : 'pending',
-  }));
+  return predictions.map((pred) => {
+    const isResolved = pred.marketStatus === 'resolved';
+    const status: 'active' | 'closed' = isResolved ? 'closed' : 'active';
+
+    let result: 'won' | 'lost' | 'pending';
+    if (!isResolved) {
+      result = 'pending';
+    } else if (pred.profit > 0) {
+      result = 'won';
+    } else {
+      result = 'lost';
+    }
+
+    // For resolved winners: value = amount + profit (what they got back)
+    // For resolved losers: value = 0 (they lost everything)
+    // For active: value = amount (what they staked)
+    const value = isResolved
+      ? Math.max(0, pred.amount + pred.profit)
+      : pred.amount;
+
+    return {
+      id: pred.id,
+      marketId: pred.poolId,
+      market: pred.marketTitle,
+      outcome: pred.outcome,
+      shares: 0,
+      avgPrice: 0.5,
+      currentPrice: 0.5,
+      value,
+      pl: pred.profit,
+      plPercent: pred.profitPercent,
+      status,
+      result,
+    };
+  });
 }
 
 // ─── Stat Card Configs ────────────────────────────────────────────────────────
@@ -129,18 +149,27 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
 
   const stats = useMemo(() => {
     if (!hasPredictions) return emptyStats;
+
+    const totalStaked = userPredictions.reduce((sum, p) => sum + p.amount, 0);
     const totalValue = realPositions.reduce((sum, p) => sum + p.value, 0);
+    const netPL = realPositions.reduce((sum, p) => sum + p.pl, 0);
+    const netPLPercent = totalStaked > 0 ? (netPL / totalStaked) * 100 : 0;
+    const biggestWin = realPositions.reduce(
+      (max, p) => (p.pl > max ? p.pl : max),
+      0
+    );
+
     return {
       totalValue,
-      netPL: 0,
-      netPLPercent: 0,
-      totalVolume: totalValue,
-      biggestWin: 0,
+      netPL,
+      netPLPercent,
+      totalVolume: totalStaked,
+      biggestWin,
       totalTrades: realPositions.length,
       activePositions: activePositions.length,
       closedPositions: closedPositions.length,
     };
-  }, [hasPredictions, realPositions, activePositions.length, closedPositions.length]);
+  }, [hasPredictions, userPredictions, realPositions, activePositions.length, closedPositions.length]);
 
   const filteredPositions = useMemo(() => {
     const positions = activeTab === 'active' ? activePositions : closedPositions;

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
+import { fetchAllMarkets, ApiMarket } from '@/lib/api-client';
+import { getPool, AleoPool } from '@/lib/aleo-client';
 
 // Program ID
 const PROGRAM_ID = 'manifoldpredictionv4.aleo';
@@ -25,6 +27,16 @@ export interface UserPrediction {
   amount: number; // in ALEO
   claimed: boolean;
   status: 'active' | 'won' | 'lost' | 'pending';
+  profit: number; // in ALEO (positive = won, negative = lost, 0 = pending)
+  profitPercent: number; // percentage gain/loss
+  marketTitle: string; // human-readable market name
+  marketStatus: 'pending' | 'locked' | 'resolved';
+}
+
+// Market + on-chain data used during enrichment
+interface EnrichmentData {
+  market: ApiMarket | null;
+  pool: AleoPool | null;
 }
 
 // Parse Aleo field value
@@ -92,19 +104,89 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
   }
 }
 
-// Convert PredictionRecord to UserPrediction for display
-function toUserPrediction(record: PredictionRecord, index: number): UserPrediction {
-  // Convert microcredits to ALEO (1 ALEO = 1,000,000 microcredits)
+// Compute P&L for a prediction given on-chain pool data
+function computePnL(
+  record: PredictionRecord,
+  market: ApiMarket | null,
+  pool: AleoPool | null
+): { profit: number; profitPercent: number } {
   const amountInAleo = record.amount / 1_000_000;
+
+  // Not resolved or no data — no P&L yet
+  if (!market || market.status !== 'resolved' || !pool) {
+    return { profit: 0, profitPercent: 0 };
+  }
+
+  const userOption = record.option; // 1 = option A, 2 = option B
+  const winningOption = pool.winning_option;
+
+  if (winningOption === 0) {
+    // No winner set yet (shouldn't happen for resolved, but guard)
+    return { profit: 0, profitPercent: 0 };
+  }
+
+  if (userOption === winningOption) {
+    // User won: winnings = (amount * total_staked) / winning_option_stakes
+    const winningStakes = winningOption === 1
+      ? pool.option_a_stakes
+      : pool.option_b_stakes;
+
+    if (winningStakes === 0) {
+      return { profit: 0, profitPercent: 0 };
+    }
+
+    const winnings = (record.amount * pool.total_staked) / winningStakes;
+    const winningsInAleo = winnings / 1_000_000;
+    const profit = winningsInAleo - amountInAleo;
+    const profitPercent = amountInAleo > 0 ? (profit / amountInAleo) * 100 : 0;
+
+    return { profit, profitPercent };
+  } else {
+    // User lost: total loss
+    return { profit: -amountInAleo, profitPercent: -100 };
+  }
+}
+
+// Convert PredictionRecord to UserPrediction for display, enriched with market data
+function toUserPrediction(
+  record: PredictionRecord,
+  index: number,
+  enrichment: EnrichmentData
+): UserPrediction {
+  const amountInAleo = record.amount / 1_000_000;
+  const { market, pool } = enrichment;
+  const { profit, profitPercent } = computePnL(record, market, pool);
+
+  // Derive market status
+  const marketStatus: 'pending' | 'locked' | 'resolved' = market?.status ?? 'pending';
+
+  // Derive display status
+  let status: 'active' | 'won' | 'lost' | 'pending';
+  if (marketStatus === 'resolved') {
+    if (profit > 0) {
+      status = 'won';
+    } else {
+      status = 'lost';
+    }
+  } else {
+    status = 'active';
+  }
+
+  // Market title: use API title or fall back to truncated pool ID
+  const marketTitle = market?.title || `Pool ${record.pool_id.slice(0, 8)}...`;
 
   return {
     id: record.id || `prediction-${index}`,
     poolId: record.pool_id,
-    poolName: `Pool ${record.pool_id.slice(0, 8)}...`,
+    poolName: marketTitle,
     outcome: record.option === 1 ? 'Yes' : 'No',
     amount: amountInAleo,
     claimed: record.claimed,
-    status: record.claimed ? 'pending' : 'active',
+    status,
+    profit,
+    profitPercent,
+    marketTitle,
+    marketStatus,
   };
 }
 
@@ -125,8 +207,11 @@ export function useUserPredictions() {
     setError(null);
 
     try {
-      // Request decrypted records from the wallet
-      const records = await requestRecords(PROGRAM_ID, true);
+      // Fetch wallet records and API markets in parallel
+      const [records, apiMarkets] = await Promise.all([
+        requestRecords(PROGRAM_ID, true),
+        fetchAllMarkets(),
+      ]);
 
       if (!records || !Array.isArray(records)) {
         setPredictions([]);
@@ -134,25 +219,59 @@ export function useUserPredictions() {
         return;
       }
 
-      // Parse and filter Prediction records
-      const parsedPredictions: UserPrediction[] = [];
+      // Build a lookup map: market_id -> ApiMarket
+      const marketMap = new Map<string, ApiMarket>();
+      for (const m of apiMarkets) {
+        marketMap.set(m.market_id, m);
+      }
 
+      // Parse prediction records
+      const parsedRecords: PredictionRecord[] = [];
       for (let i = 0; i < records.length; i++) {
         const record = records[i] as Record<string, unknown>;
-
-        // Check if this is a Prediction record (by recordName or structure)
         const recordName = (record.recordName || record.name || '') as string;
         if (recordName && !recordName.includes('Prediction')) {
           continue;
         }
-
-        const parsed = parseRecordPlaintext(record as Record<string, unknown>);
+        const parsed = parseRecordPlaintext(record);
         if (parsed) {
-          parsedPredictions.push(toUserPrediction(parsed, i));
+          parsedRecords.push(parsed);
         }
       }
 
-      setPredictions(parsedPredictions);
+      // Collect unique pool IDs for resolved markets that need on-chain data
+      const resolvedPoolIds = new Set<string>();
+      for (const rec of parsedRecords) {
+        const market = marketMap.get(rec.pool_id);
+        if (market?.status === 'resolved') {
+          resolvedPoolIds.add(rec.pool_id);
+        }
+      }
+
+      // Fetch on-chain pool data for resolved markets (in parallel)
+      const poolMap = new Map<string, AleoPool>();
+      if (resolvedPoolIds.size > 0) {
+        const poolEntries = await Promise.all(
+          Array.from(resolvedPoolIds).map(async (poolId) => {
+            const pool = await getPool(poolId);
+            return [poolId, pool] as const;
+          })
+        );
+        for (const [id, pool] of poolEntries) {
+          if (pool) {
+            poolMap.set(id, pool);
+          }
+        }
+      }
+
+      // Convert to UserPrediction with enrichment
+      const enrichedPredictions = parsedRecords.map((rec, i) => {
+        const market = marketMap.get(rec.pool_id) ?? null;
+        const pool = poolMap.get(rec.pool_id) ?? null;
+        return toUserPrediction(rec, i, { market, pool });
+      });
+
+      setPredictions(enrichedPredictions);
       setHasAttemptedFetch(true);
     } catch (err) {
       console.error('Error fetching predictions:', err);
