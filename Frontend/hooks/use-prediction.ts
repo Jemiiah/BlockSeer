@@ -260,19 +260,22 @@ export function usePrediction() {
         setTransactionId(tempTxId);
 
         // ── Step 4: Poll for confirmation ──
-        progress('Transaction submitted. Waiting for on-chain confirmation...');
+        progress('Verifying transaction...');
 
         const txResult = await pollTransactionStatus(tempTxId);
 
         if (txResult.error) {
-          setError(txResult.error);
+          const errorMsg = txResult.error || 'Transaction was rejected. The market may not exist on-chain yet.';
+          setError(errorMsg);
           setIsLoading(false);
           return {
             transactionId: txResult.onChainId || tempTxId,
             status: 'error',
-            error: txResult.error,
+            error: errorMsg,
           };
         }
+
+        progress('Transaction confirmed on-chain!');
 
         const finalTxId = txResult.onChainId || tempTxId;
         setTransactionId(finalTxId);
