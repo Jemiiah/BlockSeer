@@ -460,6 +460,27 @@ export function TradingPanel({ market }: TradingPanelProps) {
         </div>
       )}
 
+      {/* Privacy Notice */}
+      {!market.oddsRevealed && (
+        <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <Lock className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-blue-300 mb-1.5">
+                Private Prediction
+              </p>
+              <p className="text-xs text-blue-200/70 leading-relaxed">
+                Your choice and amount are encrypted in your wallet record — never revealed on-chain.
+                Only a commitment hash is posted. Pool totals stay hidden until the reveal window,
+                preventing front-running and keeping the market fair.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Submit Button */}
       {connected ? (
         <Button

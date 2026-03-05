@@ -10,6 +10,7 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 - **Real portfolio P&L** — Portfolio now shows actual profit/loss for each prediction by cross-referencing wallet records with Oracle API markets and on-chain pool data (`winning_option`, stake totals). Formula matches the smart contract's `calculate_winnings`: `winnings = (amount * total_staked) / winning_option_stakes`
 - **Market titles in portfolio** — Predictions display human-readable market titles from the Oracle API instead of truncated pool IDs ("Pool 12345...")
 - **Portfolio stats** — Stats cards (Net P&L, Biggest Win, Volume Traded) now compute from real enriched data instead of showing zeros
+- **Privacy notice in trading panel** — Added blue gradient notice before the Place Bet button explaining that predictions are encrypted in wallet records, only commitment hashes go on-chain, and pool totals stay hidden until reveal window (prevents front-running)
 
 ### Security
 - **Removed sensitive plaintext record logging** — `use-prediction.ts` was logging raw wallet records (microcredits, addresses) via `console.log`; replaced with safe `console.debug` that only logs non-sensitive metadata
