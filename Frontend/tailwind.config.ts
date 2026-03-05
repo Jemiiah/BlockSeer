@@ -8,6 +8,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -53,10 +56,15 @@ const config: Config = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'slide-in': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease-out',
         'skeleton-wave': 'skeleton-wave 1.8s ease-in-out infinite',
+        'slide-in': 'slide-in 0.3s ease-out',
       },
     },
   },

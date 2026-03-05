@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import * as db from "./db.js";
+import type { MarketRow } from "./types.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,13 +38,13 @@ app.get("/markets", async (req, res) => {
     try {
         const markets = await db.getAllMarkets();
         // Ensure reveal_window_end is included as a number (or null)
-        const enriched = markets.map((m: any) => ({
+        const enriched = markets.map((m: MarketRow) => ({
             ...m,
             reveal_window_end: m.reveal_window_end ? parseInt(m.reveal_window_end, 10) : null,
         }));
         res.json(enriched);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -52,8 +53,8 @@ app.get("/markets/pending", async (req, res) => {
     try {
         const markets = await db.getPendingMarkets();
         res.json(markets);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -62,8 +63,8 @@ app.get("/markets/locked", async (req, res) => {
     try {
         const markets = await db.getLockedMarkets();
         res.json(markets);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -75,8 +76,8 @@ app.get("/markets/:id", async (req, res) => {
             return res.status(404).json({ error: "Market not found" });
         }
         res.json(market);
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -100,14 +101,45 @@ app.post("/markets", async (req, res) => {
             });
         }
 
+        // Validate title length and content
+        const trimmedTitle = String(title).trim();
+        if (trimmedTitle.length === 0 || trimmedTitle.length > 200) {
+            return res.status(400).json({
+                error: "Title must be between 1 and 200 characters"
+            });
+        }
+
+        // Validate deadline is a reasonable future timestamp
+        const parsedDeadline = parseInt(deadline);
+        const now = Math.floor(Date.now() / 1000);
+        if (isNaN(parsedDeadline) || parsedDeadline <= now) {
+            return res.status(400).json({
+                error: "Deadline must be a future Unix timestamp"
+            });
+        }
+        const maxDeadline = now + 365 * 24 * 3600; // 1 year max
+        if (parsedDeadline > maxDeadline) {
+            return res.status(400).json({
+                error: "Deadline cannot be more than 1 year in the future"
+            });
+        }
+
+        // Validate threshold is a number
+        const parsedThreshold = parseFloat(threshold);
+        if (isNaN(parsedThreshold)) {
+            return res.status(400).json({
+                error: "Threshold must be a valid number"
+            });
+        }
+
         // Generate market ID from title hash (similar to Leo program)
-        const marketId = generateMarketId(title);
+        const marketId = generateMarketId(trimmedTitle);
 
         await db.addMarket(
             marketId,
-            title,
-            parseInt(deadline),
-            parseFloat(threshold),
+            trimmedTitle,
+            parsedDeadline,
+            parsedThreshold,
             metric_type || 'generic',
             description || '',
             option_a_label || 'YES',
@@ -119,9 +151,9 @@ app.post("/markets", async (req, res) => {
             market_id: marketId,
             message: "Market created successfully"
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error creating market:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -171,9 +203,9 @@ app.post("/markets/:id/resolve", async (req, res) => {
             winning_option,
             message: `Market resolved with option ${winning_option}`
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error resolving market:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -200,9 +232,9 @@ app.post("/markets/:id/lock", async (req, res) => {
             market_id: id,
             message: "Market locked successfully"
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error locking market:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 
@@ -251,9 +283,9 @@ app.post("/predictions", async (req, res) => {
             prediction_id,
             message: "Prediction recorded"
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Error recording prediction:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: (error as Error).message });
     }
 });
 

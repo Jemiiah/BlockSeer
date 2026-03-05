@@ -12,7 +12,7 @@ import { Loader2, BarChart3, ArrowDownToLine, AlertTriangle, RefreshCw, Lock, Ey
 import { useRevealPrediction } from '@/hooks/use-reveal-prediction';
 
 const PROGRAM_ID = 'manifoldpredictionv4.aleo';
-const ADMIN_ADDRESS = 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
+const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 const CREATE_POOL_FEE = 2_000_000; // 2 ALEO in microcredits
 
 interface TradingPanelProps {
@@ -241,7 +241,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
         <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4 mb-6 space-y-2">
           <div className="flex items-center gap-2 text-xs font-medium text-[hsl(230,10%,50%)] mb-2">
             <BarChart3 className="w-3.5 h-3.5" />
-            Pool Stats {market.oddsRevealed ? '(On-Chain)' : market.isInRevealWindow ? '(Reveal Window)' : '(Blind Betting)'}
+            Pool Stats {market.oddsRevealed ? '(On-Chain)' : market.isInRevealWindow ? '(Reveal Window)' : '(Sealed)'}
           </div>
           {market.oddsRevealed ? (
             <>

@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import type { DbPoolConfig } from "./types.js";
 
 dotenv.config();
 
@@ -7,7 +8,7 @@ export const ALEO_NODE_URL = process.env.ALEO_NODE_URL || "";
 export const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
 // PostgreSQL Configuration
-export const DB_CONFIG: any = {
+export const DB_CONFIG: DbPoolConfig = {
     connectionString: process.env.DATABASE_URL || undefined,
     host: process.env.PGHOST || "localhost",
     port: parseInt(process.env.PGPORT || "5432"),

@@ -121,7 +121,7 @@ export function MarketCard({ market, index = 0 }: MarketCardProps) {
           ) : (
             <div className="col-span-2 flex items-center justify-center gap-2 py-3 px-4 rounded-full border border-amber-500/20 bg-amber-500/[0.06] text-amber-400 text-xs font-medium">
               <Lock className="w-3 h-3" />
-              Odds revealed at deadline
+              Sealed until market close
             </div>
           )}
         </div>

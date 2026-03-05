@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Market, MarketFilter, MarketCategory } from '@/types';
-import { filterMarkets, countMarketsByStatus } from '@/lib/utils';
+import { Market, MarketFilter, MarketCategory, MarketSort } from '@/types';
+import { filterMarkets, sortMarkets, countMarketsByStatus } from '@/lib/utils';
 
 export function useMarkets(initialMarkets: Market[]) {
   const [filter, setFilter] = useState<MarketFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<MarketCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sort, setSort] = useState<MarketSort>('volume');
 
   const filteredMarkets = useMemo(() => {
     let markets = filterMarkets(initialMarkets, filter);
@@ -26,8 +27,8 @@ export function useMarkets(initialMarkets: Market[]) {
       );
     }
 
-    return markets;
-  }, [initialMarkets, filter, categoryFilter, searchQuery]);
+    return sortMarkets(markets, sort);
+  }, [initialMarkets, filter, categoryFilter, searchQuery, sort]);
 
   const counts = useMemo(
     () => countMarketsByStatus(initialMarkets),
@@ -42,6 +43,8 @@ export function useMarkets(initialMarkets: Market[]) {
     searchQuery,
     setSearchQuery,
     filteredMarkets,
+    sort,
+    setSort,
     liveCount: counts.live,
     upcomingCount: counts.upcoming,
     resolvedCount: counts.resolved,

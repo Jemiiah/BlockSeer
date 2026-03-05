@@ -19,6 +19,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '2',
@@ -38,6 +40,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '3',
@@ -57,6 +61,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '4',
@@ -76,6 +82,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '5',
@@ -95,6 +103,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '6',
@@ -114,6 +124,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '7',
@@ -133,6 +145,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '8',
@@ -152,6 +166,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
   {
     id: '9',
@@ -171,6 +187,8 @@ export const markets: Market[] = [
     oddsRevealed: true,
     isInRevealWindow: false,
     revealWindowEnd: null,
+    volumeRaw: 0,
+    endTimestamp: 0,
   },
 ];
 

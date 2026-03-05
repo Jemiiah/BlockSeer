@@ -8,8 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { API_BASE_URL } from '@/lib/api-client';
 
-// Admin address - only this wallet can create markets
-const ADMIN_ADDRESS = 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
+const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 
 // Metric types available from your oracle
 const METRIC_TYPES = [

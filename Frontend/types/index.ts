@@ -16,6 +16,8 @@ export interface Market {
   oddsRevealed: boolean;
   isInRevealWindow: boolean;
   revealWindowEnd: number | null; // Unix timestamp
+  volumeRaw: number;
+  endTimestamp: number;
 }
 
 export type MarketCategory = 'Crypto' | 'Tech' | 'AI' | 'DeFi';
@@ -23,6 +25,8 @@ export type MarketCategory = 'Crypto' | 'Tech' | 'AI' | 'DeFi';
 export type MarketStatus = 'live' | 'upcoming' | 'resolved';
 
 export type MarketFilter = 'all' | 'live' | 'upcoming' | 'resolved';
+
+export type MarketSort = 'volume' | 'ending_soon' | 'newest' | 'needs_resolution';
 
 export type OutcomeType = 'yes' | 'no';
 

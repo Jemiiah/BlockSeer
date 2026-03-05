@@ -1,16 +1,17 @@
 import pg from "pg";
 const { Pool } = pg;
 import { DB_CONFIG } from "./config.js";
+import type { MarketRow, AggregateStakes } from "./types.js";
 
 const pool = new Pool(DB_CONFIG);
 
-export async function getAllMarkets(): Promise<any[]> {
+export async function getAllMarkets(): Promise<MarketRow[]> {
     try {
         const query = `SELECT * FROM markets`;
         const { rows } = await pool.query(query);
         return rows;
-    } catch (err: any) {
-        console.error("❌ Error fetching all markets:", err.message);
+    } catch (err) {
+        console.error("Error fetching all markets:", (err as Error).message);
         throw err;
     }
 }
@@ -55,8 +56,8 @@ export async function initDb(): Promise<void> {
         `);
 
         console.log("📦 Database initialized successfully (PostgreSQL).");
-    } catch (err: any) {
-        console.error("❌ Database initialization error:", err.message);
+    } catch (err) {
+        console.error("Database initialization error:", (err as Error).message);
         throw err;
     }
 }
@@ -86,30 +87,30 @@ export async function addMarket(
     try {
         await pool.query(query, [marketId, title, deadline, threshold, metricType, description, optionALabel, optionBLabel]);
         console.log(`📝 Market ${marketId} added to DB (Metric: ${metricType}).`);
-    } catch (err: any) {
-        console.error(`❌ Error adding market ${marketId}:`, err.message);
+    } catch (err) {
+        console.error(`Error adding market ${marketId}:`, (err as Error).message);
         throw err;
     }
 }
 
-export async function getPendingMarkets(): Promise<any[]> {
+export async function getPendingMarkets(): Promise<MarketRow[]> {
     try {
         const query = `SELECT * FROM markets WHERE status = 'pending'`;
         const { rows } = await pool.query(query);
         return rows;
-    } catch (err: any) {
-        console.error("❌ Error fetching pending markets:", err.message);
+    } catch (err) {
+        console.error("Error fetching pending markets:", (err as Error).message);
         throw err;
     }
 }
 
-export async function getLockedMarkets(): Promise<any[]> {
+export async function getLockedMarkets(): Promise<MarketRow[]> {
     try {
         const query = `SELECT * FROM markets WHERE status = 'locked'`;
         const { rows } = await pool.query(query);
         return rows;
-    } catch (err: any) {
-        console.error("❌ Error fetching locked markets:", err.message);
+    } catch (err) {
+        console.error("Error fetching locked markets:", (err as Error).message);
         throw err;
     }
 }
@@ -119,8 +120,8 @@ export async function markLocked(marketId: string): Promise<void> {
     try {
         await pool.query(query, [marketId]);
         console.log(`🔒 Market ${marketId} marked as locked in DB.`);
-    } catch (err: any) {
-        console.error(`❌ Error marking market ${marketId} as locked:`, err.message);
+    } catch (err) {
+        console.error(`Error marking market ${marketId} as locked:`, (err as Error).message);
         throw err;
     }
 }
@@ -129,9 +130,9 @@ export async function markResolved(marketId: string): Promise<void> {
     const query = `UPDATE markets SET status = 'resolved' WHERE market_id = $1`;
     try {
         await pool.query(query, [marketId]);
-        console.log(`✅ Market ${marketId} marked as resolved in DB.`);
-    } catch (err: any) {
-        console.error(`❌ Error marking market ${marketId} as resolved:`, err.message);
+        console.log(`Market ${marketId} marked as resolved.`);
+    } catch (err) {
+        console.error(`Error marking market ${marketId} as resolved:`, (err as Error).message);
         throw err;
     }
 }
@@ -150,8 +151,8 @@ export async function updateMarketStats(
     try {
         await pool.query(query, [totalStaked, optionAStakes, optionBStakes, marketId]);
         console.log(`📊 Updated on-chain stats for market ${marketId}.`);
-    } catch (err: any) {
-        console.error(`❌ Error updating stats for market ${marketId}:`, err.message);
+    } catch (err) {
+        console.error(`Error updating stats for market ${marketId}:`, (err as Error).message);
         throw err;
     }
 }
@@ -169,30 +170,30 @@ export async function updateMarketMetadata(
     try {
         await pool.query(query, [optionALabel, optionBLabel, marketId]);
         console.log(`🏷️ Updated labels for market ${marketId}.`);
-    } catch (err: any) {
-        console.error(`❌ Error updating metadata for market ${marketId}:`, err.message);
+    } catch (err) {
+        console.error(`Error updating metadata for market ${marketId}:`, (err as Error).message);
         throw err;
     }
 }
 
-export async function getMarketById(marketId: string): Promise<any | null> {
+export async function getMarketById(marketId: string): Promise<MarketRow | null> {
     try {
         const query = `SELECT * FROM markets WHERE market_id = $1`;
         const { rows } = await pool.query(query, [marketId]);
         return rows.length > 0 ? rows[0] : null;
-    } catch (err: any) {
-        console.error(`❌ Error fetching market ${marketId}:`, err.message);
+    } catch (err) {
+        console.error(`Error fetching market ${marketId}:`, (err as Error).message);
         throw err;
     }
 }
 
-export async function getMarketsNotOnChain(): Promise<any[]> {
+export async function getMarketsNotOnChain(): Promise<MarketRow[]> {
     try {
         const query = `SELECT * FROM markets WHERE on_chain = FALSE OR on_chain IS NULL`;
         const { rows } = await pool.query(query);
         return rows;
-    } catch (err: any) {
-        console.error("❌ Error fetching markets not on chain:", err.message);
+    } catch (err) {
+        console.error("Error fetching markets not on chain:", (err as Error).message);
         throw err;
     }
 }
@@ -202,8 +203,8 @@ export async function markOnChain(marketId: string): Promise<void> {
     try {
         await pool.query(query, [marketId]);
         console.log(`⛓️ Market ${marketId} marked as on-chain in DB.`);
-    } catch (err: any) {
-        console.error(`❌ Error marking market ${marketId} as on-chain:`, err.message);
+    } catch (err) {
+        console.error(`Error marking market ${marketId} as on-chain:`, (err as Error).message);
         throw err;
     }
 }
@@ -225,17 +226,13 @@ export async function addPrediction(
     try {
         await pool.query(query, [predictionId, marketId, option, amount, txId]);
         console.log(`📝 Prediction ${predictionId} recorded for market ${marketId}.`);
-    } catch (err: any) {
-        console.error(`❌ Error adding prediction ${predictionId}:`, err.message);
+    } catch (err) {
+        console.error(`Error adding prediction ${predictionId}:`, (err as Error).message);
         throw err;
     }
 }
 
-export async function getMarketAggregateStakes(marketId: string): Promise<{
-    total_staked: number;
-    option_a_stakes: number;
-    option_b_stakes: number;
-}> {
+export async function getMarketAggregateStakes(marketId: string): Promise<AggregateStakes> {
     const query = `
     SELECT
         COALESCE(SUM(amount), 0) AS total_staked,
@@ -251,8 +248,8 @@ export async function getMarketAggregateStakes(marketId: string): Promise<{
             option_a_stakes: parseInt(rows[0].option_a_stakes, 10),
             option_b_stakes: parseInt(rows[0].option_b_stakes, 10),
         };
-    } catch (err: any) {
-        console.error(`❌ Error fetching aggregate stakes for ${marketId}:`, err.message);
+    } catch (err) {
+        console.error(`Error fetching aggregate stakes for ${marketId}:`, (err as Error).message);
         throw err;
     }
 }
@@ -261,21 +258,21 @@ export async function setRevealWindowEnd(marketId: string, timestamp: number): P
     const query = `UPDATE markets SET reveal_window_end = $1 WHERE market_id = $2`;
     try {
         await pool.query(query, [timestamp, marketId]);
-        console.log(`⏱️ Market ${marketId} reveal window ends at ${new Date(timestamp * 1000).toISOString()}.`);
-    } catch (err: any) {
-        console.error(`❌ Error setting reveal window for ${marketId}:`, err.message);
+        console.log(`Market ${marketId} reveal window ends at ${new Date(timestamp * 1000).toISOString()}.`);
+    } catch (err) {
+        console.error(`Error setting reveal window for ${marketId}:`, (err as Error).message);
         throw err;
     }
 }
 
-export async function getMarketsReadyForResolution(): Promise<any[]> {
+export async function getMarketsReadyForResolution(): Promise<MarketRow[]> {
     try {
         const currentTime = Math.floor(Date.now() / 1000);
         const query = `SELECT * FROM markets WHERE status = 'locked' AND reveal_window_end IS NOT NULL AND reveal_window_end < $1`;
         const { rows } = await pool.query(query, [currentTime]);
         return rows;
-    } catch (err: any) {
-        console.error("❌ Error fetching markets ready for resolution:", err.message);
+    } catch (err) {
+        console.error("Error fetching markets ready for resolution:", (err as Error).message);
         throw err;
     }
 }
@@ -285,8 +282,8 @@ export async function predictionExists(predictionId: string): Promise<boolean> {
         const query = `SELECT 1 FROM predictions WHERE prediction_id = $1`;
         const { rows } = await pool.query(query, [predictionId]);
         return rows.length > 0;
-    } catch (err: any) {
-        console.error(`❌ Error checking prediction ${predictionId}:`, err.message);
+    } catch (err) {
+        console.error(`Error checking prediction ${predictionId}:`, (err as Error).message);
         throw err;
     }
 }

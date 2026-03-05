@@ -75,6 +75,8 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     oddsRevealed,
     isInRevealWindow,
     revealWindowEnd,
+    volumeRaw: volumeInAleo,
+    endTimestamp: deadlineTimestamp,
   };
 }
 

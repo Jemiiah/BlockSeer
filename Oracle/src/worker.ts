@@ -8,6 +8,7 @@ import {
     initThreadPool,
 } from "@provablehq/sdk";
 import * as db from "./db.js";
+import type { MarketRow } from "./types.js";
 import { registry } from "./metrics/registry.js";
 import {
     ORACLE_PRIVATE_KEY,
@@ -79,7 +80,7 @@ async function syncOnChainData() {
             const marketIdField = market_id.endsWith('field') ? market_id : stringToField(market_id);
 
             // Query the 'pools' mapping in the program
-            const poolData: any = await networkClient.getProgramMappingValue(
+            const poolData = await networkClient.getProgramMappingValue(
                 PROGRAM_ID,
                 "pools",
                 marketIdField
@@ -101,9 +102,9 @@ async function syncOnChainData() {
                     await db.updateMarketStats(market_id, totalStaked, optionAStakes, optionBStakes);
                 }
             }
-        } catch (e: any) {
-            if (!e.message.includes("not found")) {
-                console.error(`❌ Error syncing data for ${market_id}: ${e.message}`);
+        } catch (e) {
+            if (!(e as Error).message?.includes("not found")) {
+                console.error(`Error syncing data for ${market_id}: ${(e as Error).message}`);
             }
         }
     }
@@ -119,14 +120,14 @@ async function marketExistsOnChain(marketId: string): Promise<boolean> {
             marketIdField
         );
         return poolData !== null && poolData !== undefined;
-    } catch (e: any) {
+    } catch {
         // "not found" means market doesn't exist on-chain
         return false;
     }
 }
 
 // Create a market on the Aleo blockchain
-async function createMarketOnChain(market: any): Promise<boolean> {
+async function createMarketOnChain(market: MarketRow): Promise<boolean> {
     if (!ORACLE_PRIVATE_KEY || !ALEO_NODE_URL) {
         console.error("❌ Missing Oracle credentials in .env.");
         return false;
@@ -166,8 +167,8 @@ async function createMarketOnChain(market: any): Promise<boolean> {
 
         console.log(`✅ Create Pool Transaction Broadcasted! ID: ${executionResponse}`);
         return true;
-    } catch (e: any) {
-        console.error(`❌ SDK Error during market creation: ${e.message}`);
+    } catch (e) {
+        console.error(`SDK Error during market creation: ${(e as Error).message}`);
         return false;
     }
 }
@@ -197,8 +198,8 @@ async function lockMarket(marketId: string): Promise<boolean> {
 
         console.log(`✅ Lock Transaction Broadcasted! ID: ${executionResponse}`);
         return true;
-    } catch (e: any) {
-        console.error(`❌ SDK Error during locking: ${e.message}`);
+    } catch (e) {
+        console.error(`SDK Error during locking: ${(e as Error).message}`);
         return false;
     }
 }
@@ -230,8 +231,8 @@ async function resolveMarket(marketId: string, winningOption: number): Promise<b
 
         console.log(`✅ Transaction Broadcasted! ID: ${executionResponse}`);
         return true;
-    } catch (e: any) {
-        console.error(`❌ SDK Error during resolution: ${e.message}`);
+    } catch (e) {
+        console.error(`SDK Error during resolution: ${(e as Error).message}`);
         return false;
     }
 }
@@ -287,7 +288,7 @@ export async function startWorker() {
             const pending = await db.getPendingMarkets();
             for (const market of pending) {
                 const { market_id, deadline } = market;
-                if (currentTime >= deadline) {
+                if (currentTime >= parseInt(deadline, 10)) {
                     console.log(`⏰ Deadline reached for market: ${market_id}. Locking...`);
                     const success = await lockMarket(market_id);
                     if (success) {
@@ -316,7 +317,7 @@ export async function startWorker() {
 
                 const value = await handler.fetchValue();
                 if (value !== null) {
-                    const winningOption = value >= threshold ? 1 : 2;
+                    const winningOption = value >= parseFloat(threshold) ? 1 : 2;
 
                     const success = await resolveMarket(market_id, winningOption);
                     if (success) {
@@ -329,8 +330,8 @@ export async function startWorker() {
                     console.log(`⚠️ Could not fetch data for market ${market_id}, retrying next loop...`);
                 }
             }
-        } catch (e: any) {
-            console.error("Error in worker loop:", e.message);
+        } catch (e) {
+            console.error("Error in worker loop:", (e as Error).message);
         }
     }, 60000); // 60 seconds
 }

@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Market, MarketFilter, OddsInfo, OrderSummary, OutcomeType } from '@/types';
+import { Market, MarketFilter, MarketSort, OddsInfo, OrderSummary, OutcomeType } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,6 +9,29 @@ export function cn(...inputs: ClassValue[]) {
 export function filterMarkets(markets: Market[], filter: MarketFilter): Market[] {
   if (filter === 'all') return markets;
   return markets.filter((m) => m.status === filter);
+}
+
+export function sortMarkets(markets: Market[], sort: MarketSort): Market[] {
+  const sorted = [...markets];
+  switch (sort) {
+    case 'volume':
+      return sorted.sort((a, b) => b.volumeRaw - a.volumeRaw);
+    case 'ending_soon':
+      return sorted.sort((a, b) => a.endTimestamp - b.endTimestamp);
+    case 'newest':
+      return sorted.sort((a, b) => b.endTimestamp - a.endTimestamp);
+    case 'needs_resolution': {
+      const priority = (m: Market) => {
+        if (m.isInRevealWindow) return 0;
+        if (m.status === 'upcoming') return 1;
+        if (m.status === 'live') return 2;
+        return 3;
+      };
+      return sorted.sort((a, b) => priority(a) - priority(b));
+    }
+    default:
+      return sorted;
+  }
 }
 
 export function countMarketsByStatus(markets: Market[]) {

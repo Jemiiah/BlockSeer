@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, LogOut, Copy, Check, Search, X, Settings, BarChart3, Store, Zap, TrendingUp, Wallet } from 'lucide-react';
+import { ChevronDown, LogOut, Copy, Check, Search, X, Settings, BarChart3, Store, Zap, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { cn, truncateAddress } from '@/lib/utils';
 import { useWalletModal } from '@provablehq/aleo-wallet-adaptor-react-ui';
+import { useWalletBalance } from '@/hooks/use-wallet-balance';
 
 interface NavbarProps {
   activeTab: 'market' | 'portfolio';
@@ -13,14 +14,9 @@ interface NavbarProps {
   onLogoClick?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
-  stats?: {
-    totalValue: number;
-    cash: number;
-  };
 }
 
-// Admin address - only this wallet can access admin panel
-const ADMIN_ADDRESS = 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
+const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 
 export function Navbar({
   activeTab,
@@ -28,7 +24,6 @@ export function Navbar({
   onLogoClick,
   searchQuery = '',
   onSearchChange,
-  stats = { totalValue: 0, cash: 0 }
 }: NavbarProps) {
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -37,6 +32,7 @@ export function Navbar({
 
   const { address: walletAddress, connected, connecting, disconnect } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
+  const { balance: walletBalance, isLoading: balanceLoading } = useWalletBalance();
   const address = walletAddress || '';
 
   // Auto-connect can get stuck in "connecting" state if wallet extension
@@ -178,21 +174,12 @@ export function Navbar({
                 <>
                   {/* Portfolio Stats */}
                   <div className="hidden lg:flex items-center gap-3 mr-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-emerald-500/[0.06] border-emerald-500/[0.12]">
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-emerald-400/60 leading-none">Portfolio</span>
-                        <span className="text-sm font-semibold text-emerald-400 font-mono tabular-nums">
-                          ${stats.totalValue.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-blue-500/[0.06] border-blue-500/[0.12]">
                       <Wallet className="w-3.5 h-3.5 text-blue-400" />
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-blue-400/60 leading-none">Cash</span>
+                        <span className="text-[10px] text-blue-400/60 leading-none">Balance</span>
                         <span className="text-sm font-semibold text-white font-mono tabular-nums">
-                          ${stats.cash.toFixed(2)}
+                          {balanceLoading ? '...' : `${walletBalance.toFixed(2)} ALEO`}
                         </span>
                       </div>
                     </div>

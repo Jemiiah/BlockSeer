@@ -122,7 +122,7 @@ export function usePrediction() {
       for (let attempt = 0; attempt < TX_POLL_MAX_ATTEMPTS; attempt++) {
         try {
           const status = await transactionStatus(tempTxId);
-          console.log(`TX poll #${attempt + 1}:`, status);
+          console.debug(`[predict] TX poll #${attempt + 1}:`, status?.status);
 
           if (status.status === 'accepted') {
             return { confirmed: true, onChainId: status.transactionId };
@@ -168,10 +168,8 @@ export function usePrediction() {
           throw new Error('Amount must be greater than 0');
         }
 
-        console.log('=== PREDICTION ===');
-        console.log('Pool ID:', formattedPoolId);
-        console.log('Option:', option);
-        console.log('Amount:', amount, 'ALEO =', amountInMicrocredits, 'microcredits');
+        // Debug info (no sensitive data)
+        console.debug('[predict]', formattedPoolId, 'option', option, amountInMicrocredits, 'microcredits');
 
         // ── Step 1: Find a credits record ──
         progress('Fetching credits records from wallet...');
@@ -186,8 +184,7 @@ export function usePrediction() {
               'requestRecords',
             );
 
-            console.log(`Found ${records.length} credits record(s)`);
-            console.log('Raw records:', JSON.stringify(records, null, 2));
+            console.debug(`[predict] Found ${records.length} credits record(s)`);
 
             const candidates = (records as RecordItem[])
               .filter((r) => !r.spent)
@@ -195,22 +192,22 @@ export function usePrediction() {
               .filter((r) => r.microcredits >= amountInMicrocredits)
               .sort((a, b) => b.microcredits - a.microcredits);
 
-            console.log('Candidates:', candidates.map((c) => c.microcredits));
+            console.debug('[predict] Candidate balances:', candidates.map((c) => c.microcredits));
 
             if (candidates.length > 0) {
               const best = candidates[0];
               const input = extractRecordInput(best.record);
               if (input) {
                 creditsRecord = { input, microcredits: best.microcredits };
-                console.log(`Selected record: ${best.microcredits} microcredits`);
+                console.debug(`[predict] Selected record: ${best.microcredits} microcredits`);
               } else {
-                console.warn('Could not extract input from record:', best.record);
+                console.warn('[predict] Could not extract input from record');
               }
             } else {
               const allBalances = (records as RecordItem[])
                 .filter((r) => !r.spent)
                 .map((r) => parseMicrocredits(r));
-              console.warn('No record with enough balance. Unspent balances:', allBalances);
+              console.warn('[predict] No record with enough balance. Unspent balances:', allBalances);
             }
           } catch (e) {
             console.warn('requestRecords failed or timed out:', e);
@@ -236,9 +233,7 @@ export function usePrediction() {
           creditsRecord.input,
         ];
 
-        console.log('Inputs:', inputs.map((inp, i) =>
-          i === 4 ? `[credits record: ${creditsRecord!.microcredits} microcredits]` : inp,
-        ));
+        console.debug('[predict] Inputs ready, credits record:', creditsRecord.microcredits, 'microcredits');
 
         // ── Step 3: Submit to wallet ──
         progress('Waiting for wallet approval...');
@@ -253,7 +248,7 @@ export function usePrediction() {
         });
 
         const tempTxId = typeof result === 'string' ? result : result?.transactionId;
-        console.log('TX submitted:', tempTxId);
+        console.debug('[predict] TX submitted:', tempTxId);
 
         if (!tempTxId) {
           throw new Error(
@@ -296,7 +291,7 @@ export function usePrediction() {
               tx_id: finalTxId,
             }),
           });
-          console.log('Prediction reported to Oracle');
+          console.debug('[predict] Reported to Oracle');
         } catch (reportErr) {
           console.warn('Failed to report prediction to Oracle (non-fatal):', reportErr);
         }

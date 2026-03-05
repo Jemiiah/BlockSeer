@@ -4,6 +4,39 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
+## [Unreleased] - 2026-03-05
+
+### Security
+- **Removed sensitive plaintext record logging** — `use-prediction.ts` was logging raw wallet records (microcredits, addresses) via `console.log`; replaced with safe `console.debug` that only logs non-sensitive metadata
+- **Admin address externalized** — Hardcoded admin address in `navbar.tsx`, `trading-panel.tsx`, and `admin/page.tsx` now reads from `NEXT_PUBLIC_ADMIN_ADDRESS` env var (falls back to current address)
+
+### Fixed
+- **Oracle type safety** — Replaced 39 `any` types across `db.ts`, `api.ts`, `worker.ts`, and `config.ts` with proper `MarketRow`, `AggregateStakes`, and `DbPoolConfig` interfaces (new `Oracle/src/types.ts`)
+- **API input validation** — `POST /markets` now validates title length (1-200 chars), deadline bounds (must be future, max 1 year), and threshold is numeric
+- **React error boundary** — Added `ErrorBoundary` component wrapping the app layout to prevent white-screen crashes; shows retry button on error
+
+### Removed
+- **Dead wagmi hook** — Deleted `use-wallet.ts` (wagmi/EVM) which was unused; entire app uses `@provablehq/aleo-wallet-adaptor-react`
+- **Excessive console.log** — Removed 30+ verbose debug logs from `aleo-client.ts` (blockchain fetch URLs, parsed pool data dumps, prediction counts) and cleaned up `use-prediction.ts` logging
+
+### Added
+- **Vertical sidebar with categories, sort & privacy status** replacing horizontal filter bar
+  - Categories section with count badges (All Markets, Crypto, DeFi, Tech, AI) — purple accent for active
+  - Sort By section (Highest Volume, Ending Soon, Newest, Needs Resolution) — teal accent for active
+  - Privacy Status section with purple glow border showing ZK proofs, encryption, MEV protection status
+  - Mobile drawer: floating filter button opens slide-in sidebar overlay on screens < 1024px
+- `MarketSort` type and `sortMarkets()` utility for flexible market ordering
+- `volumeRaw` and `endTimestamp` fields on `Market` interface for sort support
+- JetBrains Mono font via `next/font/google` with `--font-mono` CSS variable
+- `slide-in` animation keyframe and `font-mono` Tailwind utility
+
+### Changed
+- Page layout restructured to sidebar + content flex layout with `max-w-[1400px]`
+- Market grid reduced to `lg:grid-cols-2 xl:grid-cols-3` to accommodate sidebar
+- Removed category sections / upcoming / resolved groupings in favor of unified sorted grid
+
+---
+
 ## [Unreleased] - 2026-03-04
 
 ### Added
