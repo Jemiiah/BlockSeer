@@ -87,10 +87,11 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
         }
       }
 
+      const poolIdClean = obj.pool_id?.replace('.private', '').trim() || '';
       return {
         id: parseField(obj.id),
         owner: obj.owner?.replace('.private', '') || '',
-        pool_id: obj.pool_id?.replace('.private', '').trim() + 'field', // Keep 'field' suffix for market lookup
+        pool_id: poolIdClean.endsWith('field') ? poolIdClean : poolIdClean + 'field', // Ensure 'field' suffix
         option: parseU64(obj.option),
         amount: parseU64(obj.amount),
         claimed: parseBool(obj.claimed),
@@ -100,10 +101,11 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
 
     // Object format
     const dataObj = data as Record<string, string>;
+    const poolIdCleanObj = dataObj.pool_id?.replace('.private', '').trim() || '';
     return {
       id: parseField(dataObj.id),
       owner: dataObj.owner?.replace('.private', '') || '',
-      pool_id: dataObj.pool_id?.replace('.private', '').trim() + 'field', // Keep 'field' suffix for market lookup
+      pool_id: poolIdCleanObj.endsWith('field') ? poolIdCleanObj : poolIdCleanObj + 'field', // Ensure 'field' suffix
       option: parseU64(dataObj.option),
       amount: parseU64(dataObj.amount),
       claimed: parseBool(dataObj.claimed),
@@ -312,6 +314,7 @@ export function useUserPredictions() {
       const enrichedPredictions = parsedRecords.map((rec, i) => {
         const market = marketMap.get(rec.pool_id) ?? null;
         const pool = poolMap.get(rec.pool_id) ?? null;
+        console.log(`🔍 Enriching prediction - pool_id: ${rec.pool_id}, found market: ${market?.title || 'NOT FOUND'}`);
         return toUserPrediction(rec, i, { market, pool });
       });
 
