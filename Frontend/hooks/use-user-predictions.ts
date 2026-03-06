@@ -24,6 +24,7 @@ export interface PredictionRecord {
 export interface UserPrediction {
   id: string;
   poolId: string;
+  marketId: string; // Same as poolId, for navigation compatibility
   poolName: string;
   outcome: 'Yes' | 'No';
   amount: number; // in human-readable units (ALEO or token)
@@ -89,7 +90,7 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
       return {
         id: parseField(obj.id),
         owner: obj.owner?.replace('.private', '') || '',
-        pool_id: parseField(obj.pool_id),
+        pool_id: obj.pool_id?.replace('.private', '').trim() + 'field', // Keep 'field' suffix for market lookup
         option: parseU64(obj.option),
         amount: parseU64(obj.amount),
         claimed: parseBool(obj.claimed),
@@ -102,7 +103,7 @@ function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord
     return {
       id: parseField(dataObj.id),
       owner: dataObj.owner?.replace('.private', '') || '',
-      pool_id: parseField(dataObj.pool_id),
+      pool_id: dataObj.pool_id?.replace('.private', '').trim() + 'field', // Keep 'field' suffix for market lookup
       option: parseU64(dataObj.option),
       amount: parseU64(dataObj.amount),
       claimed: parseBool(dataObj.claimed),
@@ -212,6 +213,7 @@ function toUserPrediction(
   return {
     id: record.id || `prediction-${index}`,
     poolId: record.pool_id,
+    marketId: record.pool_id, // Same as poolId, for navigation
     poolName: marketTitle,
     outcome: record.option === 1 ? 'Yes' : 'No',
     amount: amountHuman,
