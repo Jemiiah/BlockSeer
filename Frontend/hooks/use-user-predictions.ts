@@ -67,7 +67,9 @@ function parseBool(value: string): boolean {
 function parseRecordPlaintext(record: Record<string, unknown>): PredictionRecord | null {
   try {
     // The plaintext field contains the actual record data
-    const data = record.plaintext || record.data || record;
+    const data = record.recordPlaintext || record.plaintext || record.data || record;
+
+    console.log('🔍 DATA TO PARSE (type:', typeof data, '):', typeof data === 'string' ? data.slice(0, 200) : data);
 
     if (typeof data === 'string') {
       // Parse string format: { id: 123field, owner: aleo1..., ... }
@@ -269,14 +271,15 @@ export function useUserPredictions() {
         if (recordName && !recordName.includes('Prediction')) {
           continue;
         }
+        console.log('🔍 RAW WALLET RECORD:', JSON.stringify(record, null, 2));
         const parsed = parseRecordPlaintext(record);
+        console.log('🔍 PARSED RESULT:', parsed);
         if (parsed) {
-          console.debug('Wallet prediction pool_id:', parsed.pool_id);
           parsedRecords.push(parsed);
         }
       }
-      console.debug(`Found ${parsedRecords.length} predictions in wallet`);
-      console.debug('Available markets:', Array.from(marketMap.keys()));
+      console.log(`🔍 PORTFOLIO DEBUG - Found ${parsedRecords.length} predictions in wallet`);
+      console.log('🔍 PORTFOLIO DEBUG - Available market IDs:', Array.from(marketMap.keys()).slice(0, 3));
 
       // Collect unique pool IDs for resolved markets that need on-chain data
       const resolvedPoolIds = new Set<string>();
