@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Portfolio } from '@/components/portfolio';
 import { MarketCard, MarketCardSkeleton, FeaturedMarket, MarketSidebar } from '@/components/market';
@@ -12,13 +12,18 @@ import { SlidersHorizontal, X } from 'lucide-react';
 
 export default function HomePage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialTab = searchParams?.get('tab') === 'portfolio' ? 'portfolio' : 'market';
   const [activeTab, setActiveTab] = useState<'market' | 'portfolio'>(initialTab);
 
-  // Update tab when URL changes
+  // Sync tab state with URL in both directions
   useEffect(() => {
     const tab = searchParams?.get('tab');
-    if (tab === 'portfolio') setActiveTab('portfolio');
+    if (tab === 'portfolio') {
+      setActiveTab('portfolio');
+    } else {
+      setActiveTab('market');
+    }
   }, [searchParams]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { connected: isConnected } = useWallet();
@@ -46,14 +51,17 @@ export default function HomePage() {
     return counts;
   }, [pools]);
 
-  const handleLogoClick = () => {
-    console.debug('Logo clicked, navigating to markets');
-    setActiveTab('market');
-  };
-  const handleTabChange = (tab: 'market' | 'portfolio') => {
-    console.debug('Tab change requested:', tab);
-    setActiveTab(tab);
-  };
+  const handleLogoClick = useCallback(() => {
+    router.push('/', { scroll: false });
+  }, [router]);
+
+  const handleTabChange = useCallback((tab: 'market' | 'portfolio') => {
+    if (tab === 'portfolio') {
+      router.push('/?tab=portfolio', { scroll: false });
+    } else {
+      router.push('/', { scroll: false });
+    }
+  }, [router]);
 
   const sidebarProps = {
     categoryFilter,
