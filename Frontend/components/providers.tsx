@@ -65,13 +65,13 @@ function ConnectionManager({
     const timeoutId = setTimeout(() => {
       cancelled = true;
       console.warn(
-        `Wallet "${walletName}" did not respond within 6s — clearing stale state`
+        `Wallet "${walletName}" did not respond within 15s — clearing stale state`
       );
       try {
         localStorage.removeItem('walletName');
       } catch {}
       onReset();
-    }, 6000);
+    }, 15000);
 
     connect(Network.TESTNET)
       .then(() => {

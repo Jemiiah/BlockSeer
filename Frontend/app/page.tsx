@@ -37,8 +37,14 @@ export default function HomePage() {
     return counts;
   }, [pools]);
 
-  const handleLogoClick = () => setActiveTab('market');
-  const handleTabChange = (tab: 'market' | 'portfolio') => setActiveTab(tab);
+  const handleLogoClick = () => {
+    console.debug('Logo clicked, navigating to markets');
+    setActiveTab('market');
+  };
+  const handleTabChange = (tab: 'market' | 'portfolio') => {
+    console.debug('Tab change requested:', tab);
+    setActiveTab(tab);
+  };
 
   const sidebarProps = {
     categoryFilter,
