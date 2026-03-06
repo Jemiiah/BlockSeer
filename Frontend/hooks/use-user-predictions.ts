@@ -271,9 +271,12 @@ export function useUserPredictions() {
         }
         const parsed = parseRecordPlaintext(record);
         if (parsed) {
+          console.debug('Wallet prediction pool_id:', parsed.pool_id);
           parsedRecords.push(parsed);
         }
       }
+      console.debug(`Found ${parsedRecords.length} predictions in wallet`);
+      console.debug('Available markets:', Array.from(marketMap.keys()));
 
       // Collect unique pool IDs for resolved markets that need on-chain data
       const resolvedPoolIds = new Set<string>();
