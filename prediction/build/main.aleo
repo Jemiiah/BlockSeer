@@ -1,6 +1,6 @@
 import credits.aleo;
 import token_registry.aleo;
-program manifoldpredictionv5.aleo;
+program manifoldpredictionv6.aleo;
 
 record Prediction:
     owner as address.private;
@@ -86,15 +86,15 @@ mapping user_predictions__len__:
 function create_pool:
     input r0 as field.public;
     input r1 as field.public;
-    input r2 as [field; 2u32].public;
-    input r3 as u64.public;
-    input r4 as field.public;
+    input r2 as field.public;
+    input r3 as [field; 2u32].public;
+    input r4 as u64.public;
+    input r5 as field.public;
     assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
-    hash.bhp256 r0 into r5 as field;
-    cast r5 r0 r1 r2 r3 0u8 0u64 0u64 0u64 0u64 0u64 0u64 0u64 r4 0u64 into r6 as Pool;
-    async create_pool r5 r6 into r7;
+    cast r0 r1 r2 r3 r4 0u8 0u64 0u64 0u64 0u64 0u64 0u64 0u64 r5 0u64 into r6 as Pool;
+    async create_pool r0 r6 into r7;
     output r6 as Pool.private;
-    output r7 as manifoldpredictionv5.aleo/create_pool.future;
+    output r7 as manifoldpredictionv6.aleo/create_pool.future;
 
 finalize create_pool:
     input r0 as field.public;
@@ -112,7 +112,7 @@ function lock_pool:
     input r0 as field.public;
     assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async lock_pool r0 into r1;
-    output r1 as manifoldpredictionv5.aleo/lock_pool.future;
+    output r1 as manifoldpredictionv6.aleo/lock_pool.future;
 
 finalize lock_pool:
     input r0 as field.public;
@@ -125,7 +125,7 @@ function resolve_pool:
     input r1 as u64.public;
     assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async resolve_pool r0 r1 into r2;
-    output r2 as manifoldpredictionv5.aleo/resolve_pool.future;
+    output r2 as manifoldpredictionv6.aleo/resolve_pool.future;
 
 finalize resolve_pool:
     input r0 as field.public;
@@ -139,7 +139,7 @@ function cancel_pool:
     input r0 as field.public;
     assert.eq self.caller aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd;
     async cancel_pool r0 into r1;
-    output r1 as manifoldpredictionv5.aleo/cancel_pool.future;
+    output r1 as manifoldpredictionv6.aleo/cancel_pool.future;
 
 finalize cancel_pool:
     input r0 as field.public;
@@ -162,11 +162,11 @@ function predict:
     assert.neq r2 0u64;
     hash.bhp256 r3 into r8 as field;
     cast self.caller r8 r0 r1 r2 false 0field into r9 as Prediction.record;
-    call credits.aleo/transfer_private_to_public r4 manifoldpredictionv5.aleo r2 into r10 r11;
+    call credits.aleo/transfer_private_to_public r4 manifoldpredictionv6.aleo r2 into r10 r11;
     async predict r11 r0 r8 r2 into r12;
     output r9 as Prediction.record;
     output r10 as credits.aleo/credits.record;
-    output r12 as manifoldpredictionv5.aleo/predict.future;
+    output r12 as manifoldpredictionv6.aleo/predict.future;
 
 finalize predict:
     input r0 as credits.aleo/transfer_private_to_public.future;
@@ -212,7 +212,7 @@ function predict_with_token:
     output r9 as Prediction.record;
     output r11 as token_registry.aleo/Token.record;
     output r12 as token_registry.aleo/Token.record;
-    output r14 as manifoldpredictionv5.aleo/predict_with_token.future;
+    output r14 as manifoldpredictionv6.aleo/predict_with_token.future;
 
 finalize predict_with_token:
     input r0 as token_registry.aleo/transfer_private.future;
@@ -245,7 +245,7 @@ function reveal_prediction:
     cast r0.owner r0.id r0.pool_id r0.option r0.amount r0.claimed r0.token_id into r1 as Prediction.record;
     async reveal_prediction r0.pool_id r0.id r0.option r0.amount into r2;
     output r1 as Prediction.record;
-    output r2 as manifoldpredictionv5.aleo/reveal_prediction.future;
+    output r2 as manifoldpredictionv6.aleo/reveal_prediction.future;
 
 finalize reveal_prediction:
     input r0 as field.public;
@@ -312,7 +312,7 @@ function collect_winnings:
     async collect_winnings r23 r4.pool_id r4.id r0 r1 r2 r3 into r24;
     output r21 as Prediction.record;
     output r22 as credits.aleo/credits.record;
-    output r24 as manifoldpredictionv5.aleo/collect_winnings.future;
+    output r24 as manifoldpredictionv6.aleo/collect_winnings.future;
 
 finalize collect_winnings:
     input r0 as credits.aleo/transfer_public_to_private.future;
@@ -376,7 +376,7 @@ function collect_winnings_token:
     output r22 as Prediction.record;
     output r24 as token_registry.aleo/Token.record;
     output r25 as token_registry.aleo/Token.record;
-    output r27 as manifoldpredictionv5.aleo/collect_winnings_token.future;
+    output r27 as manifoldpredictionv6.aleo/collect_winnings_token.future;
 
 finalize collect_winnings_token:
     input r0 as token_registry.aleo/transfer_private.future;
@@ -407,7 +407,7 @@ finalize collect_winnings_token:
 function dispute_pool:
     input r0 as field.public;
     async dispute_pool r0 into r1;
-    output r1 as manifoldpredictionv5.aleo/dispute_pool.future;
+    output r1 as manifoldpredictionv6.aleo/dispute_pool.future;
 
 finalize dispute_pool:
     input r0 as field.public;
@@ -432,7 +432,7 @@ function refund_prediction:
     async refund_prediction r3 r0.pool_id r0.id into r4;
     output r1 as Prediction.record;
     output r2 as credits.aleo/credits.record;
-    output r4 as manifoldpredictionv5.aleo/refund_prediction.future;
+    output r4 as manifoldpredictionv6.aleo/refund_prediction.future;
 
 finalize refund_prediction:
     input r0 as credits.aleo/transfer_public_to_private.future;
@@ -459,7 +459,7 @@ function refund_pred_token:
     output r2 as Prediction.record;
     output r4 as token_registry.aleo/Token.record;
     output r5 as token_registry.aleo/Token.record;
-    output r7 as manifoldpredictionv5.aleo/refund_pred_token.future;
+    output r7 as manifoldpredictionv6.aleo/refund_pred_token.future;
 
 finalize refund_pred_token:
     input r0 as token_registry.aleo/transfer_private.future;

@@ -7,7 +7,7 @@ import { getPool, AleoPool } from '@/lib/aleo-client';
 import { getTokenSymbol, formatTokenAmount } from '@/lib/tokens';
 
 // Program ID
-const PROGRAM_ID = 'manifoldpredictionv5.aleo';
+const PROGRAM_ID = 'manifoldpredictionv6.aleo';
 
 // Prediction record structure from Leo program
 export interface PredictionRecord {

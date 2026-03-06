@@ -15,7 +15,7 @@ import { useDispute } from '@/hooks/use-dispute';
 import { useRefund } from '@/hooks/use-refund';
 import { formatTokenAmount } from '@/lib/tokens';
 
-const PROGRAM_ID = 'manifoldpredictionv5.aleo';
+const PROGRAM_ID = 'manifoldpredictionv6.aleo';
 const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || 'aleo12zz8gkxwgnqfhyaryyauvvsyvw0mnfzs2eu6scrt5jsv2f9klqxqcsa9sd';
 const CREATE_POOL_FEE = 2_000_000; // 2 ALEO in microcredits
 

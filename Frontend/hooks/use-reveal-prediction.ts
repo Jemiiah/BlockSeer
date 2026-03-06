@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
-const PROGRAM_ID = 'manifoldpredictionv5.aleo';
+const PROGRAM_ID = 'manifoldpredictionv6.aleo';
 
 // Fee for reveal transaction (ZK proof generation)
 const REVEAL_FEE = 1_500_000; // 1.5 ALEO in microcredits

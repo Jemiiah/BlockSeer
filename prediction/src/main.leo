@@ -1,13 +1,13 @@
 import credits.aleo;
 import token_registry.aleo;
 
-// BlockSeer Prediction Market v5
+// BlockSeer Prediction Market v6
 // - Stablecoin support via token_registry.aleo (USDCx, USAD)
 // - 2% protocol fee on winnings
 // - Dispute mechanism with 24h window
 // - User self-claim via program public balance
 // - Refunds for cancelled pools
-program manifoldpredictionv5.aleo {
+program manifoldpredictionv6.aleo {
 
     // Pool structure — prediction market instance
     struct Pool {
@@ -78,6 +78,7 @@ program manifoldpredictionv5.aleo {
 
     // ─── 1. create_pool ─────────────────────────────────────────────────────
     async transition create_pool(
+        public pool_id: field,
         public title: field,
         public description: field,
         public options: [field; 2],
@@ -86,10 +87,8 @@ program manifoldpredictionv5.aleo {
     ) -> (Pool, Future) {
         assert_eq(self.caller, ADMIN);
 
-        let id: field = BHP256::hash_to_field(title);
-
         let pool = Pool {
-            id: id,
+            id: pool_id,
             title: title,
             description: description,
             options: options,
@@ -106,7 +105,7 @@ program manifoldpredictionv5.aleo {
             resolved_at: 0u64,
         };
 
-        return (pool, finalize_create_pool(id, pool));
+        return (pool, finalize_create_pool(pool_id, pool));
     }
 
     async function finalize_create_pool(public id: field, public pool: Pool) {

@@ -21,7 +21,7 @@ if (process.env.PGSSL === "true") {
     DB_CONFIG.ssl = { rejectUnauthorized: false };
 }
 
-export const PROGRAM_ID = "manifoldpredictionv5.aleo";
+export const PROGRAM_ID = "manifoldpredictionv6.aleo";
 export const ALEO_BROADCAST_URL = `${ALEO_NODE_URL}/testnet/transaction/broadcast`;
 
 // Costs
@@ -42,7 +42,7 @@ export const PROTOCOL_FEE_BPS = 200; // 2%
 // Embedded Program Source (v5 — stablecoin, fees, disputes, self-claim)
 export const PROGRAM_SOURCE = `import credits.aleo;
 import token_registry.aleo;
-program manifoldpredictionv5.aleo;
+program manifoldpredictionv6.aleo;
 
 record Prediction:
     owner as address.private;

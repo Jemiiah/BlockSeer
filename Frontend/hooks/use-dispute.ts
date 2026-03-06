@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
-const PROGRAM_ID = 'manifoldpredictionv5.aleo';
+const PROGRAM_ID = 'manifoldpredictionv6.aleo';
 const DISPUTE_FEE = 1_000_000; // 1 ALEO in microcredits
 const TX_POLL_INTERVAL = 3000;
 const TX_POLL_MAX_ATTEMPTS = 40;

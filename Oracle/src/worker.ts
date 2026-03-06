@@ -147,11 +147,12 @@ async function createMarketOnChain(market: MarketRow): Promise<boolean> {
         const optionBField = stringToField(option_b_label || "NO");
         const deadlineU64 = `${deadline}u64`;
 
-        // Inputs for create_pool: title, description, options[2], deadline, token_id
+        // Inputs for create_pool (v6): pool_id, title, description, options[2], deadline, token_id
         const tokenId = (market as MarketRow & { token_id?: string }).token_id || '0';
-        const tokenIdField = `${tokenId}field`;
+        const tokenIdField = tokenId.endsWith('field') ? tokenId : `${tokenId}field`;
 
         const inputs = [
+            market_id,  // v6: explicit pool_id (fixes ID mismatch)
             titleField,
             descField,
             `[${optionAField}, ${optionBField}]`,
@@ -159,20 +160,38 @@ async function createMarketOnChain(market: MarketRow): Promise<boolean> {
             tokenIdField
         ];
 
-        const fee = CREATE_POOL_FEE / 1_000_000;
+        // Use bash script instead of SDK (workaround for SDK bugs)
+        const { execSync } = await import('child_process');
+        const fs = await import('fs');
+        const { writeFileSync } = fs;
+        const scriptPath = new URL('../scripts/create_pool_v2.sh', import.meta.url).pathname;
+        const paramsPath = `/tmp/pool_params_${Date.now()}.json`;
 
-        const executionResponse = await programManager.execute({
-            programName: PROGRAM_ID,
-            functionName: "create_pool",
-            priorityFee: fee,
-            privateFee: false,
-            inputs: inputs,
-            program: PROGRAM_SOURCE,
-            keySearchParams: { cacheKey: `${PROGRAM_ID}:create_pool` }
-        });
+        // Extract option fields from array string like "[5850451field, 20047field]"
+        const optionsMatch = inputs[3].match(/\[(.+?),\s*(.+?)\]/);
+        const optionA = optionsMatch?.[1] || '5850451field';
+        const optionB = optionsMatch?.[2] || '20047field';
 
-        console.log(`✅ Create Pool Transaction Broadcasted! ID: ${executionResponse}`);
-        return true;
+        // Write params to JSON file
+        writeFileSync(paramsPath, JSON.stringify({
+            pool_id: inputs[0],
+            title: inputs[1],
+            description: inputs[2],
+            option_a: optionA,
+            option_b: optionB,
+            deadline: inputs[4],
+            token_id: inputs[5]
+        }));
+
+        try {
+            const output = execSync(`"${scriptPath}" "${paramsPath}"`, { encoding: 'utf8', cwd: process.cwd(), shell: '/bin/bash' });
+            console.log(output);
+            console.log(`✅ Pool created on-chain`);
+            return true;
+        } catch (error) {
+            console.error(`Deployment failed: ${(error as Error).message}`);
+            return false;
+        }
     } catch (e) {
         console.error(`SDK Error during market creation: ${(e as Error).message}`);
         return false;

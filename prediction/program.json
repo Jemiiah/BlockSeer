@@ -1,5 +1,5 @@
 {
-  "program": "manifoldpredictionv5.aleo",
+  "program": "manifoldpredictionv6.aleo",
   "version": "0.1.0",
   "description": "Privacy-first prediction market with stablecoin support, fees, disputes, and self-claim",
   "license": "MIT",

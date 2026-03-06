@@ -16,18 +16,18 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}Building manifoldpredictionv5.aleo...${NC}"
+echo -e "${YELLOW}Building manifoldpredictionv6.aleo...${NC}"
 
 leo clean
 leo build || {
-    echo -e "${RED}Failed to build manifoldpredictionv5.aleo${NC}"
+    echo -e "${RED}Failed to build manifoldpredictionv6.aleo${NC}"
     exit 1
 }
 
-echo -e "${YELLOW}Deploying manifoldpredictionv5.aleo to Testnet...${NC}"
+echo -e "${YELLOW}Deploying manifoldpredictionv6.aleo to Testnet...${NC}"
 
 leo deploy --network testnet --endpoint https://api.explorer.provable.com/v1 --broadcast --save "./deploy_tx" --print -y || {
-    echo -e "${RED}Failed to deploy manifoldpredictionv5.aleo${NC}"
+    echo -e "${RED}Failed to deploy manifoldpredictionv6.aleo${NC}"
     exit 1
 }
 
