@@ -25,14 +25,20 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
     || market.status === 'cancelled'
     || (market.status === 'locked' && revealWindowEnd !== null && now >= revealWindowEnd);
 
-  const optionAStakes = onChain ? onChain.option_a_stakes : parseInt(market.option_a_stakes || '0', 10);
-  const optionBStakes = onChain ? onChain.option_b_stakes : parseInt(market.option_b_stakes || '0', 10);
+  // During blind betting (pending), use Oracle-tracked stakes; on-chain is 0 until reveal
+  const optionAStakes = market.status === 'pending'
+    ? parseInt(market.option_a_stakes || '0', 10)
+    : (onChain ? onChain.option_a_stakes : parseInt(market.option_a_stakes || '0', 10));
+  const optionBStakes = market.status === 'pending'
+    ? parseInt(market.option_b_stakes || '0', 10)
+    : (onChain ? onChain.option_b_stakes : parseInt(market.option_b_stakes || '0', 10));
 
   // If odds not revealed (betting phase or reveal window), show 50/50
   const { yesPrice, noPrice } = oddsRevealed
     ? calculateOdds(optionAStakes, optionBStakes)
     : { yesPrice: 50, noPrice: 50 };
 
+  // Trader count from on-chain (total_no_of_stakes tracks reveals, not predictions during blind betting)
   const traders = onChain ? onChain.total_no_of_stakes : 0;
 
   let status: 'live' | 'upcoming' | 'resolved' = 'live';
@@ -56,7 +62,10 @@ function apiMarketToMarket(market: ApiMarket, onChain?: AleoPool | null): Market
   const tokenId = market.token_id || '0';
   const tokenSymbol = getTokenSymbol(tokenId);
   const tokenConfig = getTokenConfig(tokenId);
-  const totalStaked = onChain ? onChain.total_staked : parseInt(market.total_staked || '0', 10);
+  // During blind betting (pending), use Oracle stats; on-chain stakes are 0 until reveal
+  const totalStaked = market.status === 'pending'
+    ? parseInt(market.total_staked || '0', 10)
+    : (onChain ? onChain.total_staked : parseInt(market.total_staked || '0', 10));
   const volumeHuman = formatTokenAmount(totalStaked, tokenId);
   const volume = volumeHuman >= 1000
     ? `${(volumeHuman / 1000).toFixed(1)}K ${tokenSymbol}`

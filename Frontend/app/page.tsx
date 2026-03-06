@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
+import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Portfolio } from '@/components/portfolio';
 import { MarketCard, MarketCardSkeleton, FeaturedMarket, MarketSidebar } from '@/components/market';
@@ -10,7 +11,15 @@ import { MarketCategory } from '@/types';
 import { SlidersHorizontal, X } from 'lucide-react';
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<'market' | 'portfolio'>('market');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams?.get('tab') === 'portfolio' ? 'portfolio' : 'market';
+  const [activeTab, setActiveTab] = useState<'market' | 'portfolio'>(initialTab);
+
+  // Update tab when URL changes
+  useEffect(() => {
+    const tab = searchParams?.get('tab');
+    if (tab === 'portfolio') setActiveTab('portfolio');
+  }, [searchParams]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { connected: isConnected } = useWallet();
 
