@@ -285,6 +285,25 @@ export function useUserPredictions() {
       console.log(`🔍 PORTFOLIO DEBUG - Found ${parsedRecords.length} predictions in wallet`);
       console.log('🔍 PORTFOLIO DEBUG - Available market IDs:', Array.from(marketMap.keys()).slice(0, 3));
 
+      // Re-report any wallet predictions the Oracle might have missed (self-healing)
+      for (const rec of parsedRecords) {
+        const market = marketMap.get(rec.pool_id);
+        if (market && market.status === 'pending') {
+          // Fire-and-forget: report to Oracle, 409 (duplicate) is fine
+          fetch('/api/predictions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prediction_id: rec.id || `wallet-${rec.pool_id}-${rec.option}-${rec.amount}`,
+              market_id: rec.pool_id,
+              option: rec.option,
+              amount: rec.amount,
+              tx_id: rec.id || null,
+            }),
+          }).catch(() => {}); // Silent — best-effort
+        }
+      }
+
       // Collect unique pool IDs for resolved markets that need on-chain data
       const resolvedPoolIds = new Set<string>();
       for (const rec of parsedRecords) {
