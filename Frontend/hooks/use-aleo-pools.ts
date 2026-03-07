@@ -125,8 +125,9 @@ export function useAleoPools() {
       const allMarkets = await fetchAllMarkets();
       return allMarkets.map((market) => apiMarketToMarket(market));
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 15_000,
+    refetchInterval: 20_000, // Auto-refresh every 20s
+    refetchOnWindowFocus: true,
   });
 
   // Phase 2: Enrich with on-chain data in the background
@@ -136,6 +137,7 @@ export function useAleoPools() {
     let cancelled = false;
 
     async function enrichWithOnChain() {
+      // Reuse the API data already in pools instead of re-fetching
       const allMarkets = await fetchAllMarkets();
       const enriched = await Promise.all(
         allMarkets.map(async (market) => {
@@ -156,7 +158,7 @@ export function useAleoPools() {
     enrichWithOnChain();
 
     return () => { cancelled = true; };
-  }, [pools.length > 0 && !isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pools.length, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     pools,

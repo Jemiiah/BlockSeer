@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Market, OutcomeType } from '@/types';
 import { cn, calculateOrderSummary, calculateOdds } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [isRenewing, setIsRenewing] = useState(false);
 
+  const queryClient = useQueryClient();
   const { connected, address, connecting, executeTransaction } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
 
@@ -227,10 +229,15 @@ export function TradingPanel({ market }: TradingPanelProps) {
         setTxStatus('success');
         setTxMessage(`Prediction confirmed on-chain! TX: ${result.transactionId?.slice(0, 16)}...`);
         setAmount('');
+        // Invalidate caches so markets/pool/portfolio refresh immediately
+        queryClient.invalidateQueries({ queryKey: ['markets'] });
+        queryClient.invalidateQueries({ queryKey: ['onChainPool', market.id] });
       } else if (result.status === 'pending') {
         setTxStatus('success');
         setTxMessage(`Transaction submitted (TX: ${result.transactionId?.slice(0, 16)}...). Check explorer for confirmation.`);
         setAmount('');
+        queryClient.invalidateQueries({ queryKey: ['markets'] });
+        queryClient.invalidateQueries({ queryKey: ['onChainPool', market.id] });
       } else {
         setTxStatus('error');
         setTxMessage(result.error || 'Transaction failed');

@@ -4,6 +4,31 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
+## [Unreleased] - Performance & Data Freshness Fixes - 2026-03-07
+
+### Fixed — Frontend
+- **Reduced API cache TTL from 60s to 15s** — Markets now refresh 4x faster; stale data window reduced from up to 2 minutes to ~15 seconds
+- **Added auto-polling on market list** — Markets refetch every 20s automatically via `refetchInterval`, and refresh on window focus
+- **Added auto-polling on pool detail** — On-chain pool data refetches every 20s on market detail pages
+- **Cache invalidation after placing bet** — Trading panel now invalidates both `markets` and `onChainPool` React Query caches after successful prediction, so data refreshes immediately
+- **Server-side cache invalidation on prediction** — Predictions API route invalidates the market proxy cache so subsequent fetches get fresh Oracle data
+- **Auto-refresh portfolio predictions** — `useUserPredictions` now auto-refetches wallet records every 30s while connected, so new bets appear without manual "Sync Wallet" click
+- **Fixed broken dependency in enrichment effect** — `use-aleo-pools.ts` had `[pools.length > 0 && !isLoading]` (evaluates to boolean, causing incorrect re-runs); fixed to `[pools.length, isLoading]`
+
+### Fixed — Prediction Reporting Resilience
+- **Oracle report with retry + localStorage queue** — `use-prediction.ts` now retries the Oracle POST up to 3 times with escalating delays (2s, 5s, 15s). If all retries fail, the report is saved to `localStorage` and flushed automatically on the next page load. Reports older than 24h are pruned. This ensures predictions always get reported even if the network drops momentarily
+- **409 (duplicate) treated as success** — If the Oracle already has the prediction, the retry doesn't loop forever
+
+### Fixed — Oracle
+- **Prediction stakes now update immediately** — `POST /predictions` now calls `getMarketAggregateStakes()` + `updateMarketStats()` after inserting, so market volume reflects the bet on the next fetch instead of waiting for the worker sync cycle
+- **Added `POST /markets/sync-stakes`** — Admin utility to manually sync aggregate stakes for all pending markets
+- **Added `GET /predictions/:market_id`** — Debug endpoint to check aggregate stakes for a specific market
+
+### Files Modified
+`app/api/markets/route.ts`, `app/api/predictions/route.ts`, `lib/market-cache.ts` (new), `hooks/use-aleo-pools.ts`, `hooks/use-on-chain-pool.ts`, `hooks/use-user-predictions.ts`, `components/market/trading-panel.tsx`, `Oracle/src/api.ts`
+
+---
+
 ## [Unreleased] - Kalshi-Inspired UI Redesign - 2026-03-07
 
 ### Changed — Frontend

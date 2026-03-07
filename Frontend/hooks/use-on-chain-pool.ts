@@ -30,8 +30,9 @@ export function useOnChainPool(poolId: string | undefined) {
       };
     },
     enabled: !!poolId,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
+    staleTime: 15_000,
+    refetchInterval: 20_000,
+    refetchOnWindowFocus: true,
   });
 
   return {

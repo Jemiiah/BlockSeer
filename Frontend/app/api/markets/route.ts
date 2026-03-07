@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { consumeInvalidation } from '@/lib/market-cache';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   ? 'http://localhost:3001'
@@ -28,7 +29,7 @@ function applyPoolIdOverrides(data: any): any {
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1500; // ms
-const CACHE_TTL = 60_000; // 60s
+const CACHE_TTL = 15_000; // 15s
 
 // In-memory cache
 let cachedData: { data: unknown; timestamp: number } | null = null;
@@ -69,6 +70,11 @@ async function refreshCacheInBackground() {
 }
 
 export async function GET() {
+  // Check if another route requested cache invalidation
+  if (consumeInvalidation()) {
+    cachedData = null;
+  }
+
   // Serve from cache if fresh
   if (isCacheFresh()) {
     return NextResponse.json(applyPoolIdOverrides(cachedData!.data), {

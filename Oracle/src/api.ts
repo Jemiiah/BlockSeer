@@ -284,6 +284,14 @@ app.post("/predictions", async (req, res) => {
 
         await db.addPrediction(prediction_id, market_id, option, amount, tx_id || null);
 
+        // Update market stakes immediately so volume reflects on next fetch
+        try {
+            const aggregates = await db.getMarketAggregateStakes(market_id);
+            await db.updateMarketStats(market_id, aggregates.total_staked, aggregates.option_a_stakes, aggregates.option_b_stakes);
+        } catch (statsErr) {
+            console.warn("Failed to update market stats after prediction (non-fatal):", (statsErr as Error).message);
+        }
+
         res.status(201).json({
             success: true,
             prediction_id,
@@ -329,6 +337,34 @@ app.get("/markets/disputed", async (req, res) => {
     try {
         const markets = await db.getDisputedMarkets();
         res.json(markets);
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// Sync aggregate stakes for all pending markets (admin utility)
+app.post("/markets/sync-stakes", async (req, res) => {
+    try {
+        const markets = await db.getAllMarkets();
+        let updated = 0;
+        for (const market of markets) {
+            if (market.status === 'pending') {
+                const aggregates = await db.getMarketAggregateStakes(market.market_id);
+                await db.updateMarketStats(market.market_id, aggregates.total_staked, aggregates.option_a_stakes, aggregates.option_b_stakes);
+                updated++;
+            }
+        }
+        res.json({ success: true, updated, message: `Synced stakes for ${updated} pending markets` });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+});
+
+// Get predictions for a market (debug)
+app.get("/predictions/:market_id", async (req, res) => {
+    try {
+        const aggregates = await db.getMarketAggregateStakes(req.params.market_id);
+        res.json(aggregates);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
     }

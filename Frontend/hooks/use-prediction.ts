@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 
 // Program ID from the deployed Leo program
@@ -12,6 +12,103 @@ const DEFAULT_POOL_ID = '1field';
 // Transaction polling config
 const TX_POLL_INTERVAL = 3000; // 3 seconds
 const TX_POLL_MAX_ATTEMPTS = 40; // 2 minutes max
+
+// --- Oracle report with retry + localStorage queue ---
+const ORACLE_REPORT_MAX_RETRIES = 3;
+const ORACLE_REPORT_RETRY_DELAYS = [2000, 5000, 15000]; // escalating delays
+const PENDING_REPORTS_KEY = 'manifold_pending_oracle_reports';
+
+interface PendingReport {
+  predictionId: string;
+  marketId: string;
+  option: number;
+  amount: number;
+  timestamp: number;
+}
+
+function getPendingReports(): PendingReport[] {
+  try {
+    const raw = localStorage.getItem(PENDING_REPORTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function savePendingReport(report: PendingReport) {
+  const reports = getPendingReports();
+  // Avoid duplicates
+  if (reports.some(r => r.predictionId === report.predictionId)) return;
+  reports.push(report);
+  localStorage.setItem(PENDING_REPORTS_KEY, JSON.stringify(reports));
+}
+
+function removePendingReport(predictionId: string) {
+  const reports = getPendingReports().filter(r => r.predictionId !== predictionId);
+  localStorage.setItem(PENDING_REPORTS_KEY, JSON.stringify(reports));
+}
+
+async function postToOracle(report: PendingReport): Promise<boolean> {
+  const res = await fetch('/api/predictions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prediction_id: report.predictionId,
+      market_id: report.marketId,
+      option: report.option,
+      amount: report.amount,
+      tx_id: report.predictionId,
+    }),
+  });
+  // 409 = already reported, count as success
+  return res.ok || res.status === 409;
+}
+
+async function reportToOracle(
+  predictionId: string,
+  marketId: string,
+  option: number,
+  amount: number,
+) {
+  const report: PendingReport = { predictionId, marketId, option, amount, timestamp: Date.now() };
+  // Save immediately so we can retry even if the tab closes
+  savePendingReport(report);
+
+  for (let attempt = 0; attempt < ORACLE_REPORT_MAX_RETRIES; attempt++) {
+    try {
+      const ok = await postToOracle(report);
+      if (ok) {
+        removePendingReport(predictionId);
+        console.debug(`[predict] Reported to Oracle (attempt ${attempt + 1})`);
+        return;
+      }
+    } catch (e) {
+      console.warn(`[predict] Oracle report attempt ${attempt + 1} failed:`, e);
+    }
+    if (attempt < ORACLE_REPORT_MAX_RETRIES - 1) {
+      await new Promise(r => setTimeout(r, ORACLE_REPORT_RETRY_DELAYS[attempt]));
+    }
+  }
+  console.error('[predict] Oracle report failed after all retries — queued for later');
+}
+
+/** Flush any pending Oracle reports from previous sessions */
+export async function flushPendingOracleReports() {
+  const reports = getPendingReports();
+  if (reports.length === 0) return;
+  console.debug(`[predict] Flushing ${reports.length} pending Oracle report(s)`);
+  for (const report of reports) {
+    // Skip reports older than 24 hours
+    if (Date.now() - report.timestamp > 24 * 60 * 60 * 1000) {
+      removePendingReport(report.predictionId);
+      continue;
+    }
+    try {
+      const ok = await postToOracle(report);
+      if (ok) removePendingReport(report.predictionId);
+    } catch {
+      // Will retry next session
+    }
+  }
+}
 
 // Execution fee — cross-program call to credits.aleo/transfer_private
 // requires ZK proof generation which is computationally expensive.
@@ -111,6 +208,11 @@ export function usePrediction() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+
+  // Flush any pending Oracle reports from previous sessions on mount
+  useEffect(() => {
+    flushPendingOracleReports();
+  }, []);
 
   const pollTransactionStatus = useCallback(
     async (tempTxId: string): Promise<{ confirmed: boolean; onChainId?: string; error?: string }> => {
@@ -281,23 +383,8 @@ export function usePrediction() {
         setTransactionId(finalTxId);
         setIsLoading(false);
 
-        // Report prediction to Oracle (non-blocking — failure doesn't break the prediction)
-        try {
-          await fetch('/api/predictions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prediction_id: finalTxId,
-              market_id: formattedPoolId,
-              option,
-              amount: amountInMicrocredits,
-              tx_id: finalTxId,
-            }),
-          });
-          console.debug('[predict] Reported to Oracle');
-        } catch (reportErr) {
-          console.warn('Failed to report prediction to Oracle (non-fatal):', reportErr);
-        }
+        // Report prediction to Oracle with retries — ensures stakes update
+        reportToOracle(finalTxId, formattedPoolId, option, amountInMicrocredits);
 
         return {
           transactionId: finalTxId,

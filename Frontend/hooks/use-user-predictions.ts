@@ -337,6 +337,15 @@ export function useUserPredictions() {
     }
   }, [connected, address, hasAttemptedFetch, fetchPredictions]);
 
+  // Auto-refresh predictions every 30s while connected
+  useEffect(() => {
+    if (!connected || !address) return;
+    const interval = setInterval(() => {
+      fetchPredictions();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [connected, address, fetchPredictions]);
+
   // Reset when wallet disconnects
   useEffect(() => {
     if (!connected) {
