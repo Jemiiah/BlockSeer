@@ -37,8 +37,8 @@ const config: Config = {
         border: 'hsl(var(--border))',
         ring: 'hsl(var(--ring))',
         market: {
-          bullish: '#22c55e',
-          bearish: '#ef4444',
+          bullish: '#00c278',
+          bearish: '#ff4d4d',
           neutral: '#8b5cf6',
         },
       },

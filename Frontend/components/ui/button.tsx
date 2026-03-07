@@ -17,19 +17,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={cn(
-          'relative inline-flex items-center justify-center whitespace-nowrap rounded-xl font-semibold',
+          'relative inline-flex items-center justify-center whitespace-nowrap rounded-lg font-semibold',
           'transition-colors duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(230,15%,5%)]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b8cff]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0f13]',
 
           // Variants
           variant === 'default' && !isDisabled &&
-            'bg-gradient-to-r from-blue-500 to-violet-500 text-white hover:from-blue-400 hover:to-violet-400',
+            'bg-[#4b8cff] text-white hover:bg-[#3a7bf0]',
           variant === 'secondary' && !isDisabled &&
-            'bg-white/[0.06] text-white/90 border border-white/[0.08] hover:bg-white/[0.1] hover:border-white/[0.15]',
+            'bg-[#1c1f2a] text-[#e8e9ed] border border-[#23262f] hover:bg-[#23262f] hover:border-[#2f3340]',
           variant === 'outline' && !isDisabled &&
-            'border border-blue-500/30 bg-transparent text-blue-400 hover:bg-blue-500/10 hover:border-blue-400/50',
+            'border border-[#4b8cff]/30 bg-transparent text-[#4b8cff] hover:bg-[#4b8cff]/10 hover:border-[#4b8cff]/50',
           variant === 'ghost' && !isDisabled &&
-            'text-white/70 bg-transparent hover:bg-white/[0.06] hover:text-white',
+            'text-[#8b8d97] bg-transparent hover:bg-[#1c1f2a] hover:text-white',
 
           // Disabled
           isDisabled && !loading && 'pointer-events-none opacity-40',

@@ -93,9 +93,6 @@ function predictionsToPositions(
       result = 'lost';
     }
 
-    // For resolved winners: value = amount + profit (what they got back)
-    // For resolved losers: value = 0 (they lost everything)
-    // For active: value = amount (what they staked)
     const value = isResolved
       ? Math.max(0, pred.amount + pred.profit)
       : pred.amount;
@@ -123,8 +120,8 @@ function predictionsToPositions(
 // ─── Stat Card Configs ────────────────────────────────────────────────────────
 
 const statCardConfigs = [
-  { icon: Wallet, iconColor: 'text-blue-400' },
-  { icon: TrendingUp, iconColor: 'text-emerald-400' },
+  { icon: Wallet, iconColor: 'text-[#4b8cff]' },
+  { icon: TrendingUp, iconColor: 'text-[#00c278]' },
   { icon: Trophy, iconColor: 'text-yellow-400' },
   { icon: DollarSign, iconColor: 'text-violet-400' },
   { icon: Hash, iconColor: 'text-cyan-400' },
@@ -194,7 +191,6 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
     setTimeout(() => setSyncSuccess(true), 1500);
   }, [refetchPredictions]);
 
-  // Determine primary token for stats — use first prediction's token or default to ALEO
   const primaryToken = userPredictions.length > 0 ? userPredictions[0].tokenSymbol : 'ALEO';
 
   const statCards = [
@@ -202,9 +198,9 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
     {
       label: 'Net P&L',
       value: `${stats.netPL >= 0 ? '+' : ''}${stats.netPL.toFixed(2)} ${primaryToken}`,
-      valueClass: stats.netPL >= 0 ? 'text-emerald-400' : 'text-red-400',
+      valueClass: stats.netPL >= 0 ? 'text-[#00c278]' : 'text-[#ff4d4d]',
       sub: `(${stats.netPLPercent >= 0 ? '+' : ''}${stats.netPLPercent.toFixed(1)}%)`,
-      subClass: stats.netPL >= 0 ? 'text-emerald-400/70' : 'text-red-400/70',
+      subClass: stats.netPL >= 0 ? 'text-[#00c278]/70' : 'text-[#ff4d4d]/70',
     },
     { label: 'Biggest Win', value: `+${stats.biggestWin.toFixed(2)} ${primaryToken}`, valueClass: 'text-yellow-400' },
     { label: 'Volume Traded', value: `${stats.totalVolume.toFixed(2)} ${primaryToken}`, valueClass: 'text-white' },
@@ -214,7 +210,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
       value: `${stats.activePositions}`,
       valueClass: 'text-white',
       sub: 'positions',
-      subClass: 'text-[hsl(230,10%,40%)]',
+      subClass: 'text-[#5a5c66]',
     },
   ];
 
@@ -225,16 +221,16 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
         <div>
           <div className="flex items-center gap-3 mb-3">
             <h1 className="text-3xl md:text-4xl font-bold text-white">Portfolio</h1>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
-              <Zap className="w-3 h-3 text-blue-400" />
-              <span className="text-xs font-medium text-blue-400">Live</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#4b8cff]/10 border border-[#4b8cff]/20">
+              <Zap className="w-3 h-3 text-[#4b8cff]" />
+              <span className="text-xs font-medium text-[#4b8cff]">Live</span>
             </div>
           </div>
-          <p className="text-[hsl(230,10%,50%)] text-lg">
+          <p className="text-[#8b8d97] text-lg">
             Track your predictions and performance across all markets.
           </p>
           {!hasPredictions && isConnected && !isLoadingPredictions && (
-            <p className="text-[hsl(230,10%,35%)] text-sm mt-2">
+            <p className="text-[#5a5c66] text-sm mt-2">
               Sync your wallet to load your predictions.
             </p>
           )}
@@ -245,18 +241,18 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
             onClick={handleSync}
             disabled={isLoadingPredictions}
             className={cn(
-              'flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200',
+              'flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200',
               syncSuccess
-                ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400'
+                ? 'bg-[#00c278]/20 border border-[#00c278]/30 text-[#00c278]'
                 : isLoadingPredictions
-                  ? 'bg-white/[0.06] border border-white/[0.1] text-white/70'
-                  : 'bg-blue-500/20 border border-blue-500/20 text-white hover:border-blue-500/40'
+                  ? 'bg-[#1c1f2a] border border-[#23262f] text-[#8b8d97]'
+                  : 'bg-[#4b8cff]/20 border border-[#4b8cff]/20 text-white hover:border-[#4b8cff]/40'
             )}
           >
             {isLoadingPredictions ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : syncSuccess ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-[#00c278]" />
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
@@ -274,18 +270,18 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
           const iconColor =
             i === 1
               ? stats.netPL >= 0
-                ? 'text-emerald-400'
-                : 'text-red-400'
+                ? 'text-[#00c278]'
+                : 'text-[#ff4d4d]'
               : cfg.iconColor;
 
           return (
             <div
               key={card.label}
-              className="border border-white/[0.06] rounded-xl p-4 bg-[hsl(230,15%,8%)]"
+              className="border border-[#23262f] rounded-xl p-4 bg-[#161820]"
             >
               <div className="flex items-center gap-2 mb-2">
                 <IconComponent className={cn('w-5 h-5', iconColor)} />
-                <span className="text-xs font-medium text-[hsl(230,10%,45%)]">
+                <span className="text-xs font-medium text-[#8b8d97]">
                   {card.label}
                 </span>
               </div>
@@ -296,8 +292,8 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                 <div className="flex items-center gap-1 mt-1">
                   {i === 1 && (
                     stats.netPL >= 0
-                      ? <ArrowUpRight className="w-3 h-3 text-emerald-400" />
-                      : <ArrowDownRight className="w-3 h-3 text-red-400" />
+                      ? <ArrowUpRight className="w-3 h-3 text-[#00c278]" />
+                      : <ArrowDownRight className="w-3 h-3 text-[#ff4d4d]" />
                   )}
                   <span className={cn('text-xs', card.subClass)}>{card.sub}</span>
                 </div>
@@ -308,12 +304,11 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
       </div>
 
       {/* Positions Section */}
-      <div className="border border-white/[0.06] rounded-2xl overflow-hidden bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm">
+      <div className="border border-[#23262f] rounded-xl overflow-hidden bg-[#161820]">
         {/* Tabs and Search */}
-        <div className="px-6 py-4 border-b border-white/[0.06]">
+        <div className="px-6 py-4 border-b border-[#23262f]">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            {/* Tabs */}
-            <div className="flex items-center gap-1 bg-white/[0.04] rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-[#1c1f2a] rounded-lg p-1">
               {(['active', 'closed'] as const).map((tab) => (
                 <button
                   key={tab}
@@ -321,8 +316,8 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                   className={cn(
                     'px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200',
                     activeTab === tab
-                      ? 'bg-white/[0.08] text-white shadow-sm'
-                      : 'text-[hsl(230,10%,45%)] hover:text-white'
+                      ? 'bg-[#23262f] text-white shadow-sm'
+                      : 'text-[#8b8d97] hover:text-white'
                   )}
                 >
                   {tab === 'active' ? 'Active' : 'Closed'}
@@ -331,9 +326,9 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                       'ml-2 px-1.5 py-0.5 rounded text-xs',
                       activeTab === tab
                         ? tab === 'active'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'bg-white/[0.08] text-white/70'
-                        : 'bg-white/[0.06] text-[hsl(230,10%,40%)]'
+                          ? 'bg-[#4b8cff]/20 text-[#4b8cff]'
+                          : 'bg-[#23262f] text-[#8b8d97]'
+                        : 'bg-[#1c1f2a] text-[#5a5c66]'
                     )}
                   >
                     {tab === 'active' ? stats.activePositions : stats.closedPositions}
@@ -342,20 +337,19 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
               ))}
             </div>
 
-            {/* Search */}
             <div className="relative w-full sm:w-72 sm:mx-auto group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(230,10%,40%)] transition-colors group-focus-within:text-blue-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a5c66] transition-colors group-focus-within:text-[#4b8cff]" />
               <input
                 type="text"
                 placeholder="Search positions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg pl-10 pr-10 py-2 text-sm text-white placeholder:text-[hsl(230,10%,40%)] focus:outline-none focus:border-blue-500/30 transition-colors"
+                className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-lg pl-10 pr-10 py-2 text-sm text-white placeholder:text-[#5a5c66] focus:outline-none focus:border-[#4b8cff]/30 transition-colors"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[hsl(230,10%,40%)] hover:text-white/70 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5a5c66] hover:text-[#8b8d97] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -367,33 +361,33 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
         {/* Positions Table */}
         {!isConnected ? (
           <div className="px-6 py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-4">
-              <Wallet className="w-8 h-8 text-[hsl(230,10%,35%)]" />
+            <div className="w-16 h-16 rounded-xl bg-[#1c1f2a] flex items-center justify-center mx-auto mb-4">
+              <Wallet className="w-8 h-8 text-[#5a5c66]" />
             </div>
-            <p className="text-[hsl(230,10%,50%)] mb-2">
+            <p className="text-[#8b8d97] mb-2">
               Connect your wallet to view positions
             </p>
-            <p className="text-sm text-[hsl(230,10%,35%)]">
+            <p className="text-sm text-[#5a5c66]">
               Your portfolio data will appear here
             </p>
           </div>
         ) : filteredPositions.length === 0 ? (
           <div className="px-6 py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-xl bg-[#1c1f2a] flex items-center justify-center mx-auto mb-4">
               {!hasPredictions && !searchQuery ? (
-                <RefreshCw className="w-8 h-8 text-[hsl(230,10%,35%)]" />
+                <RefreshCw className="w-8 h-8 text-[#5a5c66]" />
               ) : (
-                <BarChart3 className="w-8 h-8 text-[hsl(230,10%,35%)]" />
+                <BarChart3 className="w-8 h-8 text-[#5a5c66]" />
               )}
             </div>
-            <p className="text-[hsl(230,10%,50%)] mb-2">
+            <p className="text-[#8b8d97] mb-2">
               {searchQuery
                 ? 'No positions match your search'
                 : !hasPredictions
                   ? 'No predictions loaded yet'
                   : `No ${activeTab} positions`}
             </p>
-            <p className="text-sm text-[hsl(230,10%,35%)] mb-4">
+            <p className="text-sm text-[#5a5c66] mb-4">
               {searchQuery
                 ? 'Try a different search term'
                 : !hasPredictions
@@ -405,10 +399,10 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                 onClick={handleSync}
                 disabled={isLoadingPredictions}
                 className={cn(
-                  'flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-semibold mx-auto transition-colors',
+                  'flex items-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-semibold mx-auto transition-colors',
                   isLoadingPredictions
-                    ? 'bg-white/[0.06] border border-white/[0.1] text-white/70'
-                    : 'bg-blue-500/20 border border-blue-500/20 text-white hover:border-blue-500/40'
+                    ? 'bg-[#1c1f2a] border border-[#23262f] text-[#8b8d97]'
+                    : 'bg-[#4b8cff]/20 border border-[#4b8cff]/20 text-white hover:border-[#4b8cff]/40'
                 )}
               >
                 {isLoadingPredictions ? (
@@ -424,7 +418,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
           <div className="overflow-x-auto scroll-hint">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs font-medium text-[hsl(230,10%,40%)] uppercase tracking-wider bg-white/[0.02]">
+                <tr className="text-left text-xs font-medium text-[#5a5c66] uppercase tracking-wider bg-[#1c1f2a]">
                   <th className="px-6 py-3">Market</th>
                   <th className="px-6 py-3">Outcome</th>
                   <th className="px-6 py-3 text-right">Avg Price</th>
@@ -438,22 +432,22 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-[#23262f]">
                 {filteredPositions.map((position) => (
                   <tr
                     key={position.id}
-                    className="group transition-colors duration-200 hover:bg-white/[0.03]"
+                    className="group transition-colors duration-200 hover:bg-[#1c1f2a]"
                   >
                     <td className="px-6 py-4">
                       <Link
                         href={`/market/${position.marketId}`}
-                        className="flex items-center gap-2 text-sm text-white font-medium max-w-xs hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-2 text-sm text-white font-medium max-w-xs hover:text-[#4b8cff] transition-colors"
                       >
                         <span className="truncate">{position.market}</span>
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       </Link>
                       {activeTab === 'closed' && position.closedAt && (
-                        <div className="text-xs text-[hsl(230,10%,35%)] mt-1">
+                        <div className="text-xs text-[#5a5c66] mt-1">
                           Closed {position.closedAt}
                         </div>
                       )}
@@ -463,14 +457,14 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                         className={cn(
                           'px-2.5 py-1 rounded-md text-xs font-semibold',
                           position.outcome === 'Yes'
-                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            : 'bg-white/[0.06] text-white/70 border border-white/[0.08]'
+                            ? 'bg-[#00c278]/10 text-[#00c278] border border-[#00c278]/20'
+                            : 'bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/20'
                         )}
                       >
                         {position.outcome}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[hsl(230,10%,50%)] text-right font-mono">
+                    <td className="px-6 py-4 text-sm text-[#8b8d97] text-right font-mono">
                       {(position.avgPrice * 100).toFixed(0)}&cent;
                     </td>
                     {activeTab === 'active' && (
@@ -484,7 +478,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                     <td
                       className={cn(
                         'px-6 py-4 text-sm text-right font-mono font-medium',
-                        position.pl >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        position.pl >= 0 ? 'text-[#00c278]' : 'text-[#ff4d4d]'
                       )}
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -506,12 +500,12 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                             className={cn(
                               'inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold',
                               position.isCancelled
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/20'
                                 : position.result === 'won'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  ? 'bg-[#00c278]/10 text-[#00c278] border border-[#00c278]/20'
                                   : position.result === 'lost'
-                                    ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                    : 'bg-white/[0.06] text-[hsl(230,10%,50%)] border border-white/[0.08]'
+                                    ? 'bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/20'
+                                    : 'bg-[#1c1f2a] text-[#8b8d97] border border-[#23262f]'
                             )}
                           >
                             {position.isCancelled
@@ -523,7 +517,7 @@ export function Portfolio({ isConnected = false }: PortfolioProps) {
                                   : 'Pending'}
                           </span>
                           {position.isClaimable && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#00c278]/20 text-[#00c278] border border-[#00c278]/30">
                               Claimable
                             </span>
                           )}

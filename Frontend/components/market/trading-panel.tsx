@@ -35,7 +35,6 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const { connected, address, connecting, executeTransaction } = useWallet();
   const { setVisible: setWalletModalVisible } = useWalletModal();
 
-  // Auto-connect can get stuck — timeout after 4s
   const [connectingTimedOut, setConnectingTimedOut] = useState(false);
   useEffect(() => {
     if (connecting) {
@@ -104,15 +103,11 @@ export function TradingPanel({ market }: TradingPanelProps) {
     setWalletModalVisible(true);
   };
 
-  // Convert public credits to a private record so the user can trade.
-  // We convert the stake amount + extra buffer for the prediction fee,
-  // and pay the conversion fee from the public balance too.
   const handleConvertToPrivate = async () => {
     if (!connected || !address || !executeTransaction) return;
 
-    // Convert enough for the stake + prediction fee (1.5 ALEO) + buffer
     const stakeAmount = amount ? parseFloat(amount) : 5;
-    const convertAmount = stakeAmount + 2; // extra for prediction fee buffer
+    const convertAmount = stakeAmount + 2;
     const microcredits = Math.floor(convertAmount * 1_000_000);
 
     setIsConverting(true);
@@ -124,7 +119,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
         program: 'credits.aleo',
         function: 'transfer_public_to_private',
         inputs: [address, `${microcredits}u64`],
-        fee: 1_000_000, // 1 ALEO fee for conversion
+        fee: 1_000_000,
         privateFee: false,
       });
 
@@ -152,8 +147,6 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const isAdmin = address === ADMIN_ADDRESS;
   const poolExpired = onChainPool && onChainPool.deadline > 0 && onChainPool.deadline < Math.floor(Date.now() / 1000);
 
-  // Renew an expired pool by calling create_pool with the same title but a future deadline.
-  // Using the same title produces the same BHP256 hash → same pool ID → overwrites the old entry.
   const handleRenewPool = async () => {
     if (!connected || !address || !executeTransaction || !onChainPool) return;
 
@@ -162,7 +155,6 @@ export function TradingPanel({ market }: TradingPanelProps) {
     setTxMessage('Renewing pool with new deadline...');
 
     try {
-      // Set deadline to 1 year from now
       const newDeadline = Math.floor(Date.now() / 1000) + 365 * 24 * 3600;
 
       const result = await executeTransaction({
@@ -197,7 +189,6 @@ export function TradingPanel({ market }: TradingPanelProps) {
     }
   };
 
-  // Compute on-chain stakes for odds calculation
   const onChainStakes = onChainPool
     ? { optionAStakes: onChainPool.option_a_stakes, optionBStakes: onChainPool.option_b_stakes }
     : undefined;
@@ -209,21 +200,15 @@ export function TradingPanel({ market }: TradingPanelProps) {
   const orderSummary = calculateOrderSummary(amount, selectedOutcome, market, onChainStakes);
   const quickAmounts = [10, 25, 50, 100];
 
-
-  
-
   const handleTrade = async () => {
     if (!connected || !amount) return;
-    
+
     setTxStatus('pending');
     setTxMessage('Fetching records & preparing transaction...');
 
-    // Convert outcome to option number (1 for yes/option A, 2 for no/option B)
     const option = selectedOutcome === 'yes' ? 1 : 2;
-
-    // Amount in Aleo (the hook will convert to microcredits)
     const amountInAleo = parseFloat(amount);
-    
+
     if (isNaN(amountInAleo) || amountInAleo <= 0) {
       setTxStatus('error');
       setTxMessage('Please enter a valid amount');
@@ -257,42 +242,38 @@ export function TradingPanel({ market }: TradingPanelProps) {
   };
 
   return (
-    <div className="relative bg-[hsl(230,15%,8%)]/80 backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6 sticky top-[88px] overflow-hidden">
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
-
+    <div className="relative bg-[#161820] border border-[#23262f] rounded-xl p-6 sticky top-[88px]">
       <h2 className="text-lg font-semibold text-white mb-6">Place Order</h2>
 
-      {/* Pool Stats */}
       {/* Token denomination badge */}
       {market.tokenSymbol && market.tokenSymbol !== 'ALEO' && (
         <div className="flex items-center gap-2 mb-4">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border border-violet-500/30 bg-violet-500/[0.1] text-violet-400">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-violet-500/30 bg-violet-500/10 text-violet-400">
             {market.tokenSymbol}
           </span>
-          <span className="text-xs text-[hsl(230,10%,40%)]">Pool denomination</span>
+          <span className="text-xs text-[#5a5c66]">Pool denomination</span>
         </div>
       )}
 
       {onChainPool && (
-        <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4 mb-6 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-medium text-[hsl(230,10%,50%)] mb-2">
+        <div className="bg-[#1c1f2a] border border-[#23262f] rounded-xl p-4 mb-6 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-[#8b8d97] mb-2">
             <BarChart3 className="w-3.5 h-3.5" />
             Pool Stats {market.oddsRevealed ? '(On-Chain)' : market.isInRevealWindow ? '(Reveal Window)' : '(Sealed)'}
           </div>
           {market.oddsRevealed ? (
             <>
               <div className="flex justify-between text-sm">
-                <span className="text-[hsl(230,10%,40%)]">Total Staked</span>
-                <span className="text-white/80 font-medium">{formatTokenAmount(onChainPool.total_staked, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
+                <span className="text-[#5a5c66]">Total Staked</span>
+                <span className="text-[#e8e9ed] font-medium">{formatTokenAmount(onChainPool.total_staked, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[hsl(230,10%,40%)]">Yes Pool</span>
-                <span className="text-blue-400 font-medium">{formatTokenAmount(onChainPool.option_a_stakes, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
+                <span className="text-[#5a5c66]">Yes Pool</span>
+                <span className="text-[#00c278] font-medium">{formatTokenAmount(onChainPool.option_a_stakes, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[hsl(230,10%,40%)]">No Pool</span>
-                <span className="text-white/60 font-medium">{formatTokenAmount(onChainPool.option_b_stakes, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
+                <span className="text-[#5a5c66]">No Pool</span>
+                <span className="text-[#ff4d4d] font-medium">{formatTokenAmount(onChainPool.option_b_stakes, market.tokenId).toFixed(2)} {market.tokenSymbol}</span>
               </div>
             </>
           ) : market.isInRevealWindow ? (
@@ -307,34 +288,34 @@ export function TradingPanel({ market }: TradingPanelProps) {
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-[hsl(230,10%,40%)]">Predictions</span>
-            <span className="text-white/80 font-medium">{totalPredictions}</span>
+            <span className="text-[#5a5c66]">Predictions</span>
+            <span className="text-[#e8e9ed] font-medium">{totalPredictions}</span>
           </div>
         </div>
       )}
 
-      {/* Outcome Selection - Large Buy Buttons */}
+      {/* Outcome Selection */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         <button
           onClick={() => setSelectedOutcome('yes')}
           className={cn(
             'relative py-8 px-4 rounded-xl font-semibold transition-all duration-200 border-2',
             selectedOutcome === 'yes'
-              ? 'bg-blue-500/15 border-blue-500 shadow-lg shadow-blue-500/20'
-              : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.12]'
+              ? 'bg-[#00c278]/15 border-[#00c278] shadow-lg shadow-[#00c278]/10'
+              : 'bg-[#1c1f2a] border-[#23262f] hover:bg-[#23262f] hover:border-[#2f3340]'
           )}
         >
-          <div className="text-sm font-medium mb-2 text-white/60">Buy</div>
+          <div className="text-sm font-medium mb-2 text-[#8b8d97]">Buy</div>
           <div className="text-2xl font-bold text-white mb-2">Yes</div>
           <div className={cn(
             "text-xl font-mono font-semibold",
-            selectedOutcome === 'yes' ? 'text-blue-400' : 'text-white/70'
+            selectedOutcome === 'yes' ? 'text-[#00c278]' : 'text-[#8b8d97]'
           )}>
             {market.oddsRevealed ? `${market.yesPrice}¢` : '--'}
           </div>
           {selectedOutcome === 'yes' && (
             <div className="absolute top-3 right-3">
-              <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full bg-[#00c278] flex items-center justify-center">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
@@ -347,21 +328,21 @@ export function TradingPanel({ market }: TradingPanelProps) {
           className={cn(
             'relative py-8 px-4 rounded-xl font-semibold transition-all duration-200 border-2',
             selectedOutcome === 'no'
-              ? 'bg-red-500/15 border-red-500 shadow-lg shadow-red-500/20'
-              : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.12]'
+              ? 'bg-[#ff4d4d]/15 border-[#ff4d4d] shadow-lg shadow-[#ff4d4d]/10'
+              : 'bg-[#1c1f2a] border-[#23262f] hover:bg-[#23262f] hover:border-[#2f3340]'
           )}
         >
-          <div className="text-sm font-medium mb-2 text-white/60">Buy</div>
+          <div className="text-sm font-medium mb-2 text-[#8b8d97]">Buy</div>
           <div className="text-2xl font-bold text-white mb-2">No</div>
           <div className={cn(
             "text-xl font-mono font-semibold",
-            selectedOutcome === 'no' ? 'text-red-400' : 'text-white/70'
+            selectedOutcome === 'no' ? 'text-[#ff4d4d]' : 'text-[#8b8d97]'
           )}>
             {market.oddsRevealed ? `${market.noPrice}¢` : '--'}
           </div>
           {selectedOutcome === 'no' && (
             <div className="absolute top-3 right-3">
-              <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full bg-[#ff4d4d] flex items-center justify-center">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
@@ -373,9 +354,9 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
       {/* Amount Input */}
       <div className="mb-6">
-        <label className="text-xs text-[hsl(230,10%,40%)] mb-2 block">Amount ({market.tokenSymbol})</label>
+        <label className="text-xs text-[#5a5c66] mb-2 block">Amount ({market.tokenSymbol})</label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[hsl(230,10%,40%)]">◎</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5a5c66]">◎</span>
           <input
             type="number"
             value={amount}
@@ -383,7 +364,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
             placeholder="0.00"
             min="0"
             step="0.01"
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl py-4 pl-8 pr-4 text-white placeholder-[hsl(230,10%,30%)] focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
+            className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl py-4 pl-8 pr-4 text-white placeholder-[#5a5c66] focus:outline-none focus:border-[#4b8cff]/40 focus:ring-1 focus:ring-[#4b8cff]/20 transition-all"
           />
         </div>
         <div className="flex gap-2 mt-3">
@@ -391,7 +372,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
             <button
               key={val}
               onClick={() => setAmount(val.toString())}
-              className="flex-1 py-2 text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-[hsl(230,10%,50%)] hover:text-white rounded-lg border border-white/[0.04] hover:border-white/[0.08] transition-all"
+              className="flex-1 py-2 text-xs font-medium bg-[#1c1f2a] hover:bg-[#23262f] text-[#8b8d97] hover:text-white rounded-lg border border-[#23262f] hover:border-[#2f3340] transition-all"
             >
               {val} {market.tokenSymbol}
             </button>
@@ -400,38 +381,38 @@ export function TradingPanel({ market }: TradingPanelProps) {
       </div>
 
       {/* Order Summary */}
-      <div className="bg-white/[0.03] border border-white/[0.04] rounded-xl p-4 mb-6 space-y-3">
+      <div className="bg-[#1c1f2a] border border-[#23262f] rounded-xl p-4 mb-6 space-y-3">
         {market.oddsRevealed ? (
           <>
             <div className="flex justify-between text-sm">
-              <span className="text-[hsl(230,10%,40%)]">Odds</span>
-              <span className="text-white/80 font-medium">{orderSummary.odds}x</span>
+              <span className="text-[#5a5c66]">Odds</span>
+              <span className="text-[#e8e9ed] font-medium">{orderSummary.odds}x</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[hsl(230,10%,40%)]">Implied Probability</span>
-              <span className="text-white/80 font-medium">{orderSummary.avgPrice}%</span>
+              <span className="text-[#5a5c66]">Implied Probability</span>
+              <span className="text-[#e8e9ed] font-medium">{orderSummary.avgPrice}%</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-[hsl(230,10%,40%)]">Shares</span>
-              <span className="text-white/80 font-medium">{orderSummary.shares}</span>
+              <span className="text-[#5a5c66]">Shares</span>
+              <span className="text-[#e8e9ed] font-medium">{orderSummary.shares}</span>
             </div>
-            <div className="border-t border-white/[0.06] pt-3 space-y-2">
+            <div className="border-t border-[#23262f] pt-3 space-y-2">
               <div className="flex justify-between">
-                <span className="text-[hsl(230,10%,50%)]">Potential Return</span>
-                <span className="text-emerald-400 font-semibold">{orderSummary.potentialReturn} {market.tokenSymbol}</span>
+                <span className="text-[#8b8d97]">Potential Return</span>
+                <span className="text-[#00c278] font-semibold">{orderSummary.potentialReturn} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[hsl(230,10%,40%)]">Profit</span>
-                <span className="text-emerald-400/80 font-medium">+{orderSummary.profit} {market.tokenSymbol}</span>
+                <span className="text-[#5a5c66]">Profit</span>
+                <span className="text-[#00c278]/80 font-medium">+{orderSummary.profit} {market.tokenSymbol}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[hsl(230,10%,40%)]">Protocol Fee</span>
-                <span className="text-white/40 font-medium">2%</span>
+                <span className="text-[#5a5c66]">Protocol Fee</span>
+                <span className="text-[#5a5c66] font-medium">2%</span>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2 text-sm text-[hsl(230,10%,50%)] py-2">
+          <div className="flex items-center gap-2 text-sm text-[#8b8d97] py-2">
             <Lock className="w-3.5 h-3.5" />
             <span>Returns calculated after deadline</span>
           </div>
@@ -443,9 +424,9 @@ export function TradingPanel({ market }: TradingPanelProps) {
         <div
           className={cn(
             'mb-4 p-3 rounded-lg text-sm',
-            txStatus === 'pending' && 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-            txStatus === 'success' && 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-            txStatus === 'error' && 'bg-red-500/10 text-red-400 border border-red-500/20'
+            txStatus === 'pending' && 'bg-[#4b8cff]/10 text-[#4b8cff] border border-[#4b8cff]/20',
+            txStatus === 'success' && 'bg-[#00c278]/10 text-[#00c278] border border-[#00c278]/20',
+            txStatus === 'error' && 'bg-[#ff4d4d]/10 text-[#ff4d4d] border border-[#ff4d4d]/20'
           )}
         >
           {txStatus === 'pending' && (
@@ -459,7 +440,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
             <button
               onClick={handleConvertToPrivate}
               disabled={isConverting}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-sm font-medium border border-blue-500/20 transition-colors disabled:opacity-50"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#4b8cff]/20 hover:bg-[#4b8cff]/30 text-[#4b8cff] text-sm font-medium border border-[#4b8cff]/20 transition-colors disabled:opacity-50"
             >
               {isConverting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -543,16 +524,16 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
       {/* Privacy Notice */}
       {!market.oddsRevealed && (
-        <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+        <div className="mb-4 p-4 rounded-xl bg-[#4b8cff]/10 border border-[#4b8cff]/20">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
-              <Lock className="w-4 h-4 text-blue-400" />
+              <Lock className="w-4 h-4 text-[#4b8cff]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-blue-300 mb-1.5">
+              <p className="text-xs font-medium text-[#4b8cff] mb-1.5">
                 Private Prediction
               </p>
-              <p className="text-xs text-blue-200/70 leading-relaxed">
+              <p className="text-xs text-[#4b8cff]/70 leading-relaxed">
                 Your choice and amount are encrypted in your wallet record — never revealed on-chain.
                 Only a commitment hash is posted. Pool totals stay hidden until the reveal window,
                 preventing front-running and keeping the market fair.
@@ -564,12 +545,12 @@ export function TradingPanel({ market }: TradingPanelProps) {
 
       {/* Claim Winnings Section */}
       {market.isClaimable && connected && poolPredictions.length > 0 && onChainPool && (
-        <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+        <div className="mb-4 p-4 rounded-xl bg-[#00c278]/10 border border-[#00c278]/20">
           <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-semibold text-emerald-400">Claim Winnings</span>
+            <Trophy className="w-4 h-4 text-[#00c278]" />
+            <span className="text-sm font-semibold text-[#00c278]">Claim Winnings</span>
           </div>
-          <p className="text-xs text-emerald-400/60 mb-3">
+          <p className="text-xs text-[#00c278]/60 mb-3">
             This market is resolved and the dispute window has passed. Claim your winnings below (2% protocol fee).
           </p>
           <div className="space-y-2">
@@ -585,7 +566,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
                   onProgress: (msg) => setTxMessage(msg),
                 })}
                 disabled={isCollecting}
-                className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-sm font-medium border border-emerald-500/20 transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-[#00c278]/20 hover:bg-[#00c278]/30 text-[#00c278] text-sm font-medium border border-[#00c278]/20 transition-colors disabled:opacity-50"
               >
                 <span className="flex items-center gap-2">
                   {isCollecting ? (
@@ -598,7 +579,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
               </button>
             ))}
             {collectError && (
-              <p className="text-xs text-red-400/70 mt-1">{collectError}</p>
+              <p className="text-xs text-[#ff4d4d]/70 mt-1">{collectError}</p>
             )}
           </div>
         </div>
@@ -628,19 +609,19 @@ export function TradingPanel({ market }: TradingPanelProps) {
             Dispute Resolution
           </button>
           {disputeError && (
-            <p className="text-xs text-red-400/70 mt-2">{disputeError}</p>
+            <p className="text-xs text-[#ff4d4d]/70 mt-2">{disputeError}</p>
           )}
         </div>
       )}
 
       {/* Cancelled / Refund Section */}
       {market.isCancelled && connected && poolPredictions.length > 0 && (
-        <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+        <div className="mb-4 p-4 rounded-xl bg-[#ff4d4d]/10 border border-[#ff4d4d]/20">
           <div className="flex items-center gap-2 mb-2">
-            <Undo2 className="w-4 h-4 text-red-400" />
-            <span className="text-sm font-semibold text-red-400">Market Cancelled</span>
+            <Undo2 className="w-4 h-4 text-[#ff4d4d]" />
+            <span className="text-sm font-semibold text-[#ff4d4d]">Market Cancelled</span>
           </div>
-          <p className="text-xs text-red-400/60 mb-3">
+          <p className="text-xs text-[#ff4d4d]/60 mb-3">
             This market was cancelled after a dispute. Refund your predictions below.
           </p>
           <div className="space-y-2">
@@ -649,7 +630,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
                 key={pred.id}
                 onClick={() => refundPrediction(pred.recordInput, (msg) => setTxMessage(msg))}
                 disabled={isRefunding}
-                className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-medium border border-red-500/20 transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-between gap-2 py-2.5 px-4 rounded-lg bg-[#ff4d4d]/20 hover:bg-[#ff4d4d]/30 text-[#ff4d4d] text-sm font-medium border border-[#ff4d4d]/20 transition-colors disabled:opacity-50"
               >
                 <span className="flex items-center gap-2">
                   {isRefunding ? (
@@ -662,7 +643,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
               </button>
             ))}
             {refundError && (
-              <p className="text-xs text-red-400/70 mt-1">{refundError}</p>
+              <p className="text-xs text-[#ff4d4d]/70 mt-1">{refundError}</p>
             )}
           </div>
         </div>
@@ -674,10 +655,10 @@ export function TradingPanel({ market }: TradingPanelProps) {
           onClick={handleTrade}
           disabled={isLoading || !amount || parseFloat(amount) <= 0 || !!poolExpired}
           className={cn(
-            "w-full py-6 text-lg font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200",
+            "w-full py-6 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200",
             selectedOutcome === 'yes'
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30'
-              : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
+              ? 'bg-[#00c278] hover:bg-[#00a866] text-white'
+              : 'bg-[#ff4d4d] hover:bg-[#e64444] text-white'
           )}
         >
           {isLoading ? (
@@ -693,7 +674,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
         <Button
           onClick={handleConnectWallet}
           className={cn(
-            "w-full py-6 text-lg font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/30",
+            "w-full py-6 text-lg font-semibold bg-[#4b8cff] hover:bg-[#3a7bf0] text-white",
             showConnecting && "opacity-50"
           )}
         >
@@ -708,8 +689,7 @@ export function TradingPanel({ market }: TradingPanelProps) {
         </Button>
       )}
 
-      <p className="text-xs text-[hsl(230,10%,35%)] text-center mt-4">Powered by Aleo Zero-Knowledge Proofs</p>
+      <p className="text-xs text-[#5a5c66] text-center mt-4">Powered by Aleo Zero-Knowledge Proofs</p>
     </div>
   );
 }
-

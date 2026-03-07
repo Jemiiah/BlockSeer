@@ -52,7 +52,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
   }, [activities.length]);
 
   return (
-    <div className="rounded-2xl bg-[hsl(230,15%,8%)]/90 border border-white/[0.08] overflow-hidden">
+    <div className="rounded-2xl bg-[#161820] border border-[#23262f] overflow-hidden">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
@@ -108,8 +108,8 @@ function ActivityItem({
     <div
       className={cn(
         'group flex items-center justify-between py-3 px-3 -mx-3 rounded-xl',
-        'transition-colors duration-200 hover:bg-white/[0.03]',
-        isNew && 'bg-white/[0.02]'
+        'transition-colors duration-200 hover:bg-[#1c1f2a]',
+        isNew && 'bg-[#161820]'
       )}
     >
       <div className="flex items-center gap-3">
@@ -120,7 +120,7 @@ function ActivityItem({
             background: `linear-gradient(135deg, hsl(${hue1}, 70%, 55%), hsl(${(hue1 + 60) % 360}, 70%, 55%))`,
           }}
         >
-          <div className="w-full h-full rounded-full bg-[hsl(230,15%,10%)] flex items-center justify-center">
+          <div className="w-full h-full rounded-full bg-[#161820] flex items-center justify-center">
             <span
               className="text-[10px] font-bold tracking-wide"
               style={{ color: `hsl(${hue1}, 60%, 70%)` }}

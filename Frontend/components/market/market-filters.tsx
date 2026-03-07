@@ -102,13 +102,13 @@ function FilterButton({ isActive, onClick, icon, label, count, variant = 'defaul
       onClick={onClick}
       className={cn(
         'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 border',
-        isActive ? activeStyles[variant] : 'bg-white/[0.03] border-white/[0.06] text-[hsl(230,10%,50%)] hover:text-white hover:border-white/[0.1]'
+        isActive ? activeStyles[variant] : 'bg-[#1c1f2a] border-[#23262f] text-[#8b8d97] hover:text-white hover:border-[#2f3340]'
       )}
     >
       {icon}
       {label}
       {count !== undefined && (
-        <span className="text-xs bg-white/[0.06] px-2 py-0.5 rounded-full">{count}</span>
+        <span className="text-xs bg-[#1c1f2a] px-2 py-0.5 rounded-full">{count}</span>
       )}
     </button>
   );
@@ -128,7 +128,7 @@ function CategoryChip({ label, isActive, onClick }: CategoryChipProps) {
         'px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 border',
         isActive
           ? 'bg-white/10 border-white/20 text-white'
-          : 'bg-white/[0.02] border-white/[0.06] text-[hsl(230,10%,45%)] hover:text-white/70 hover:border-white/[0.1]'
+          : 'bg-[#161820] border-[#23262f] text-[#8b8d97] hover:text-[#e8e9ed] hover:border-[#2f3340]'
       )}
     >
       {label}

@@ -4,6 +4,33 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
+## [Unreleased] - Kalshi-Inspired UI Redesign - 2026-03-07
+
+### Changed — Frontend
+- **Killed glassmorphism** — Removed all `backdrop-blur-*`, translucent `bg-white/[0.04]`/`bg-white/[0.06]` backgrounds, and `border-white/[0.06]` borders across every component. Replaced with solid dark colors for a clean, professional look
+- **New solid color palette** — Page bg `#0d0f13`, card surfaces `#161820`, hover `#1c1f2a`, borders `#23262f`, text primary `#e8e9ed`, secondary `#8b8d97`, tertiary `#5a5c66`
+- **Yes/No colors** — Replaced blue Yes / neutral No with Kalshi-style teal-green `#00c278` (Yes/Buy) and clean red `#ff4d4d` (No/Sell) across market cards, trading panel, portfolio outcomes, and featured market
+- **Accent color** — Primary accent changed from gradient blue-violet to solid muted blue `#4b8cff` for links, active states, search focus, tab indicators
+- **Removed gradient text** — Deleted `.gradient-text` CSS class; "Manifold" logo and "Prediction Markets" header now use solid white text
+- **Removed background gradients** — Deleted the 3 radial gradient overlay divs from `layout.tsx`; page background is now flat `#0d0f13`
+- **Removed decorative accent lines** — Removed `bg-gradient-to-r from-transparent via-blue-500/30 to-transparent` accent lines from trading panel and event detail hero
+- **Reduced border radius** — Cards changed from `rounded-2xl` to `rounded-xl`; outcome buttons from `rounded-full` to `rounded-lg`; CSS `--radius` from `0.75rem` to `0.5rem`
+- **Solid navbar** — Removed `backdrop-blur-xl` and translucent background; now solid `#0d0f13` with `#23262f` border
+- **Solid mobile tab bar** — Removed `backdrop-blur-xl`; solid background, portfolio tab now uses `#4b8cff` instead of violet
+- **Clean buttons** — Default button variant changed from gradient blue-violet to solid `#4b8cff`; trading submit buttons use solid `#00c278`/`#ff4d4d`
+- **Clean badges** — All badge variants updated to solid backgrounds with new palette colors and `rounded-lg`
+- **Trading panel** — Buy Yes/No buttons use solid green/red when selected; privacy notice uses solid blue; all status sections use solid backgrounds
+- **Market sidebar** — Removed privacy status gradient glows; all sections use solid `#161820` backgrounds with `#23262f` borders
+- **Portfolio** — Stat cards, position table, tab switcher all use solid backgrounds; outcome badges use green/red instead of blue/neutral
+- **Skeleton loading** — Updated to solid colors (`#161820` / `#1c1f2a`) instead of HSL translucent values
+- **Scrollbar** — Updated to solid `#0d0f13` track and `#23262f` thumb
+- **Chart colors** — Price chart line uses `#00c278`/`#ff4d4d`; grid lines use `#23262f`; accent bar uses solid `#4b8cff`
+
+### Files Modified
+`globals.css`, `tailwind.config.ts`, `layout.tsx`, `navbar.tsx`, `market-card.tsx`, `featured-market.tsx`, `market-sidebar.tsx`, `trading-panel.tsx`, `event-detail.tsx`, `portfolio.tsx`, `button.tsx`, `badge.tsx`, `page.tsx`
+
+---
+
 ## [Deployed] - v5 Stablecoin, Fees, Disputes, Claim Winnings - 2026-03-05
 
 ### Deployed

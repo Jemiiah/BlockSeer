@@ -21,7 +21,6 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
   const trendingMarkets = markets.slice(0, 5);
   const SLIDE_DURATION = 6000;
 
-  // Validate activeIndex
   useEffect(() => {
     if (activeIndex >= trendingMarkets.length) {
       setActiveIndex(0);
@@ -51,7 +50,6 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
     goToSlide(prev);
   }, [activeIndex, trendingMarkets.length, goToSlide]);
 
-  // Auto-advance with progress tracking
   useEffect(() => {
     if (trendingMarkets.length === 0 || isPaused) return;
 
@@ -73,7 +71,6 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
     };
   }, [activeIndex, isPaused, trendingMarkets.length, goNext]);
 
-  // Keyboard navigation
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'ArrowRight') goNext();
@@ -101,38 +98,36 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Flame className="w-5 h-5 text-amber-400" />
-          <span className="text-sm font-semibold uppercase tracking-wider text-amber-400">
+          <span className="text-sm font-semibold text-amber-400">
             Trending
           </span>
         </div>
 
-        {/* Arrow navigation */}
         <div className="flex items-center gap-2">
           <button
             onClick={goPrev}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.1] transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#1c1f2a] border border-[#23262f] text-[#8b8d97] hover:text-white hover:bg-[#23262f] transition-colors"
             aria-label="Previous market"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={goNext}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.1] transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#1c1f2a] border border-[#23262f] text-[#8b8d97] hover:text-white hover:bg-[#23262f] transition-colors"
             aria-label="Next market"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {/* Progress ring */}
           <div className="relative w-8 h-8 flex items-center justify-center">
             <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
-              <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
+              <circle cx="16" cy="16" r="13" fill="none" stroke="#23262f" strokeWidth="2" />
               <circle
                 cx="16"
                 cy="16"
                 r="13"
                 fill="none"
-                stroke="hsl(217, 91%, 60%)"
+                stroke="#4b8cff"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 13}`}
@@ -143,7 +138,7 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
             </svg>
             {isPaused && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-1.5 h-3 border-l-2 border-r-2 border-white/40" />
+                <div className="w-1.5 h-3 border-l-2 border-r-2 border-[#8b8d97]" />
               </div>
             )}
           </div>
@@ -154,8 +149,8 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
       <Link
         href={`/market/${market.id}`}
         className={cn(
-          'block relative rounded-3xl p-8 cursor-pointer overflow-hidden min-h-[300px]',
-          'bg-[hsl(230,15%,8%)]/90 backdrop-blur-sm border border-white/[0.08]',
+          'block relative rounded-xl p-8 cursor-pointer overflow-hidden min-h-[300px]',
+          'bg-[#161820] border border-[#23262f]',
           'transition-opacity duration-300',
           isTransitioning ? 'opacity-0' : 'opacity-100'
         )}
@@ -164,49 +159,43 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
         aria-label={`${activeIndex + 1} of ${trendingMarkets.length}: ${market.title}`}
       >
         <div className="relative z-10 flex flex-col h-full">
-          {/* Category badge */}
           <div className="mb-4 flex items-center gap-3">
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border border-blue-500/30 bg-blue-500/[0.1] text-blue-400">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#4b8cff]/25 bg-[#4b8cff]/10 text-[#4b8cff]">
               {market.category}
             </span>
             {market.tokenSymbol && market.tokenSymbol !== 'ALEO' && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-violet-500/30 bg-violet-500/[0.1] text-violet-400">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border border-violet-500/30 bg-violet-500/10 text-violet-400">
                 {market.tokenSymbol}
               </span>
             )}
-            <span className="text-xs text-white/30 font-medium">
+            <span className="text-xs text-[#5a5c66] font-medium">
               {activeIndex + 1} / {trendingMarkets.length}
             </span>
           </div>
 
-          {/* Title and description */}
           <div className="flex-1 mb-6">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight">
               {market.title}
             </h2>
-            <p className="text-white/40 text-base md:text-lg leading-relaxed max-w-2xl">
+            <p className="text-[#5a5c66] text-base md:text-lg leading-relaxed max-w-2xl">
               {market.description}
             </p>
           </div>
 
-          {/* Stats row */}
           <div className="flex flex-wrap items-end gap-6">
             {market.oddsRevealed ? (
               <>
-                {/* Yes price */}
-                <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-emerald-500/[0.08] border-emerald-500/20">
-                  <span className="text-3xl font-bold text-emerald-400">{market.yesPrice}¢</span>
-                  <span className="text-xs text-emerald-400/70 font-medium">Yes</span>
+                <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-[#00c278]/10 border-[#00c278]/20">
+                  <span className="text-3xl font-bold text-[#00c278]">{market.yesPrice}¢</span>
+                  <span className="text-xs text-[#00c278]/70 font-medium">Yes</span>
                 </div>
-
-                {/* No price */}
-                <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-red-500/[0.08] border-red-500/20">
-                  <span className="text-3xl font-bold text-red-400">{market.noPrice}¢</span>
-                  <span className="text-xs text-red-400/70 font-medium">No</span>
+                <div className="flex flex-col items-center px-6 py-3 rounded-xl border bg-[#ff4d4d]/10 border-[#ff4d4d]/20">
+                  <span className="text-3xl font-bold text-[#ff4d4d]">{market.noPrice}¢</span>
+                  <span className="text-xs text-[#ff4d4d]/70 font-medium">No</span>
                 </div>
               </>
             ) : market.isInRevealWindow ? (
-              <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.06]">
+              <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-violet-500/20 bg-violet-500/10">
                 <Timer className="w-5 h-5 text-violet-400" />
                 <div>
                   <span className="text-lg font-bold text-violet-400">Reveal Window Open</span>
@@ -214,7 +203,7 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06]">
+              <div className="flex items-center gap-3 px-6 py-3 rounded-xl border border-amber-500/20 bg-amber-500/10">
                 <Lock className="w-5 h-5 text-amber-400" />
                 <div>
                   <span className="text-lg font-bold text-amber-400">Sealed Predictions</span>
@@ -223,8 +212,7 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
               </div>
             )}
 
-            {/* Volume and traders */}
-            <div className="flex items-center gap-5 text-white/40 ml-auto">
+            <div className="flex items-center gap-5 text-[#5a5c66] ml-auto">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">{market.volume} vol</span>
@@ -237,13 +225,12 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
               </div>
             </div>
 
-            {/* Change indicator */}
             <div
               className={cn(
-                'px-4 py-1.5 rounded-full text-sm font-bold',
+                'px-4 py-1.5 rounded-lg text-sm font-bold',
                 market.change >= 0
-                  ? 'bg-emerald-500/10 text-emerald-400'
-                  : 'bg-red-500/10 text-red-400'
+                  ? 'bg-[#00c278]/10 text-[#00c278]'
+                  : 'bg-[#ff4d4d]/10 text-[#ff4d4d]'
               )}
             >
               {market.change >= 0 ? '+' : ''}
@@ -265,8 +252,8 @@ export function FeaturedMarket({ markets }: FeaturedMarketProps) {
             className={cn(
               'rounded-full transition-all duration-300',
               index === activeIndex
-                ? 'w-8 h-2.5 bg-blue-500'
-                : 'w-2.5 h-2.5 bg-white/15 hover:bg-white/30'
+                ? 'w-8 h-2.5 bg-[#4b8cff]'
+                : 'w-2.5 h-2.5 bg-[#23262f] hover:bg-[#2f3340]'
             )}
             aria-label={`Go to slide ${index + 1}`}
             aria-current={index === activeIndex ? 'true' : undefined}

@@ -34,13 +34,13 @@ export default function MarketPage() {
         <main className="max-w-7xl mx-auto px-6 py-10">
           {/* Skeleton loading */}
           <div className="animate-pulse">
-            <div className="h-5 w-36 bg-white/[0.06] rounded mb-8" />
+            <div className="h-5 w-36 bg-[#1c1f2a] rounded mb-8" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-[hsl(230,15%,8%)]/80 border border-white/[0.06] rounded-2xl p-6 h-64" />
-                <div className="bg-[hsl(230,15%,8%)]/80 border border-white/[0.06] rounded-2xl p-6 h-40" />
+                <div className="bg-[#161820] border border-[#23262f] rounded-xl p-6 h-64" />
+                <div className="bg-[#161820] border border-[#23262f] rounded-xl p-6 h-40" />
               </div>
-              <div className="bg-[hsl(230,15%,8%)]/80 border border-white/[0.06] rounded-2xl p-6 h-96" />
+              <div className="bg-[#161820] border border-[#23262f] rounded-xl p-6 h-96" />
             </div>
           </div>
         </main>
@@ -59,17 +59,17 @@ export default function MarketPage() {
         <main className="max-w-7xl mx-auto px-6 py-10">
           <div className="text-center py-20">
             <h1 className="text-2xl font-bold text-white mb-4">Market Not Found</h1>
-            <p className="text-[hsl(230,10%,50%)] mb-6">The market you&apos;re looking for doesn&apos;t exist.</p>
+            <p className="text-[#8b8d97] mb-6">The market you&apos;re looking for doesn&apos;t exist.</p>
             <div className="flex items-center justify-center gap-4">
               <button
                 onClick={handleBack}
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                className="px-6 py-3 bg-[#4b8cff] hover:bg-[#3a7bf0] text-white rounded-lg transition-colors"
               >
                 Back to Markets
               </button>
               <Link
                 href="/"
-                className="px-6 py-3 bg-white/[0.06] hover:bg-white/[0.1] text-white rounded-lg transition-colors"
+                className="px-6 py-3 bg-[#1c1f2a] hover:bg-[#23262f] text-white rounded-lg transition-colors"
               >
                 Browse All Markets
               </Link>

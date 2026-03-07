@@ -140,11 +140,11 @@ export default function AdminPage() {
   // Loading state
   if (connecting) {
     return (
-      <div className="min-h-screen bg-[hsl(230,15%,7%)] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0f13] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-spin" />
           <h1 className="text-2xl font-bold text-white mb-2">Connecting Wallet...</h1>
-          <p className="text-[hsl(230,10%,50%)]">Please wait while your wallet connects.</p>
+          <p className="text-[#8b8d97]">Please wait while your wallet connects.</p>
         </div>
       </div>
     );
@@ -153,11 +153,11 @@ export default function AdminPage() {
   // Not connected
   if (!connected) {
     return (
-      <div className="min-h-screen bg-[hsl(230,15%,7%)] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0f13] flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-amber-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Wallet Not Connected</h1>
-          <p className="text-[hsl(230,10%,50%)] mb-6">Connect your wallet to access the admin panel.</p>
+          <p className="text-[#8b8d97] mb-6">Connect your wallet to access the admin panel.</p>
           <div className="flex gap-3 justify-center">
             <Button onClick={() => setWalletModalVisible(true)} className="bg-blue-600 hover:bg-blue-700">
               <Zap className="w-4 h-4 mr-2" />
@@ -175,12 +175,12 @@ export default function AdminPage() {
   // Not admin
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[hsl(230,15%,7%)] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0f13] flex items-center justify-center">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
-          <p className="text-[hsl(230,10%,50%)] mb-2">Only the admin wallet can create markets.</p>
-          <p className="text-[hsl(230,10%,35%)] text-sm font-mono break-all mb-6">
+          <p className="text-[#8b8d97] mb-2">Only the admin wallet can create markets.</p>
+          <p className="text-[#5a5c66] text-sm font-mono break-all mb-6">
             {ADMIN_ADDRESS}
           </p>
           <Link href="/">
@@ -194,15 +194,15 @@ export default function AdminPage() {
   const selectedToken = TOKENS.find(t => t.value === form.token_id)?.label ?? 'ALEO';
 
   return (
-    <div className="min-h-screen bg-[hsl(230,15%,7%)]">
+    <div className="min-h-screen bg-[#0d0f13]">
       {/* Sticky Header */}
-      <div className="border-b border-white/[0.06] sticky top-0 z-10 bg-[hsl(230,15%,7%)]/95 backdrop-blur-sm">
+      <div className="border-b border-[#23262f] sticky top-0 z-10 bg-[#0d0f13] ">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 text-[hsl(230,10%,50%)] hover:text-white transition-colors">
+          <Link href="/" className="inline-flex items-center gap-2 text-[#8b8d97] hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Back to Markets
           </Link>
-          <span className="text-xs font-mono text-[hsl(230,10%,35%)]">
+          <span className="text-xs font-mono text-[#5a5c66]">
             {address?.slice(0, 10)}...{address?.slice(-6)}
           </span>
         </div>
@@ -212,7 +212,7 @@ export default function AdminPage() {
         {/* Title */}
         <div className="mb-10">
           <h1 className="text-4xl font-bold text-white mb-2">Create New Market</h1>
-          <p className="text-[hsl(230,10%,50%)] text-lg">
+          <p className="text-[#8b8d97] text-lg">
             Create a prediction market that will be resolved by the oracle.
           </p>
         </div>
@@ -240,13 +240,13 @@ export default function AdminPage() {
                   {result.marketId && (
                     <button
                       onClick={() => handleCopyId(result.marketId!)}
-                      className="mt-2 w-full flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-2 text-xs font-mono text-white/80 hover:bg-white/[0.06] transition-colors"
+                      className="mt-2 w-full flex items-center gap-2 bg-[#1c1f2a] rounded-lg px-3 py-2 text-xs font-mono text-white/80 hover:bg-[#1c1f2a] transition-colors"
                     >
                       <span className="truncate">ID: {result.marketId}</span>
                       {copied ? (
                         <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 ml-auto" />
                       ) : (
-                        <Copy className="w-3.5 h-3.5 text-[hsl(230,10%,50%)] flex-shrink-0 ml-auto" />
+                        <Copy className="w-3.5 h-3.5 text-[#8b8d97] flex-shrink-0 ml-auto" />
                       )}
                     </button>
                   )}
@@ -256,8 +256,8 @@ export default function AdminPage() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Section 1: Core Details */}
-              <fieldset className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 space-y-5">
-                <legend className="text-xs font-semibold uppercase tracking-wider text-[hsl(230,10%,50%)] px-1">
+              <fieldset className="bg-[#161820] border border-[#23262f] rounded-xl p-6 space-y-5">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-[#8b8d97] px-1">
                   Core Details
                 </legend>
 
@@ -271,9 +271,9 @@ export default function AdminPage() {
                     placeholder="ETH above $4,000?"
                     required
                     maxLength={200}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder:text-[hsl(230,10%,30%)] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white placeholder:text-[#5a5c66] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                   />
-                  <p className="text-[10px] text-[hsl(230,10%,35%)] mt-1.5">{form.title.length}/200</p>
+                  <p className="text-[10px] text-[#5a5c66] mt-1.5">{form.title.length}/200</p>
                 </div>
 
                 <div>
@@ -286,9 +286,9 @@ export default function AdminPage() {
                     required
                     rows={3}
                     maxLength={500}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder:text-[hsl(230,10%,30%)] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
+                    className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white placeholder:text-[#5a5c66] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
                   />
-                  <p className="text-[10px] text-[hsl(230,10%,35%)] mt-1.5">{form.description.length}/500</p>
+                  <p className="text-[10px] text-[#5a5c66] mt-1.5">{form.description.length}/500</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -301,7 +301,7 @@ export default function AdminPage() {
                       onChange={handleChange}
                       placeholder="YES"
                       required
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder:text-[hsl(230,10%,30%)] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white placeholder:text-[#5a5c66] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     />
                   </div>
                   <div>
@@ -313,15 +313,15 @@ export default function AdminPage() {
                       onChange={handleChange}
                       placeholder="NO"
                       required
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder:text-[hsl(230,10%,30%)] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white placeholder:text-[#5a5c66] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     />
                   </div>
                 </div>
               </fieldset>
 
               {/* Section 2: Market Settings */}
-              <fieldset className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 space-y-5">
-                <legend className="text-xs font-semibold uppercase tracking-wider text-[hsl(230,10%,50%)] px-1">
+              <fieldset className="bg-[#161820] border border-[#23262f] rounded-xl p-6 space-y-5">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-[#8b8d97] px-1">
                   Market Settings
                 </legend>
 
@@ -332,7 +332,7 @@ export default function AdminPage() {
                       name="category"
                       value={form.category}
                       onChange={handleChange}
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     >
                       {CATEGORIES.map(c => (
                         <option key={c.value} value={c.value}>{c.label}</option>
@@ -345,7 +345,7 @@ export default function AdminPage() {
                       name="token_id"
                       value={form.token_id}
                       onChange={handleChange}
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     >
                       {TOKENS.map(t => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -360,13 +360,13 @@ export default function AdminPage() {
                     name="metric_type"
                     value={form.metric_type}
                     onChange={handleChange}
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                   >
                     {METRIC_TYPES.map(m => (
                       <option key={m.value} value={m.value}>{m.label}</option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-[hsl(230,10%,35%)] mt-1.5">
+                  <p className="text-[10px] text-[#5a5c66] mt-1.5">
                     {METRIC_TYPES.find(m => m.value === form.metric_type)?.description}
                   </p>
                 </div>
@@ -381,9 +381,9 @@ export default function AdminPage() {
                     placeholder="4000"
                     required
                     step="0.01"
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder:text-[hsl(230,10%,30%)] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white placeholder:text-[#5a5c66] focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                   />
-                  <p className="text-[10px] text-[hsl(230,10%,35%)] mt-1.5">
+                  <p className="text-[10px] text-[#5a5c66] mt-1.5">
                     If metric ≥ {form.threshold || '?'} → {form.option_a_label} wins, otherwise → {form.option_b_label} wins
                   </p>
                 </div>
@@ -396,39 +396,39 @@ export default function AdminPage() {
                     value={form.deadline}
                     onChange={handleChange}
                     required
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-[#1c1f2a] border border-[#23262f] rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                   />
-                  <p className="text-[10px] text-[hsl(230,10%,35%)] mt-1.5">
+                  <p className="text-[10px] text-[#5a5c66] mt-1.5">
                     Market locks at this time. Betting closes.
                   </p>
                 </div>
               </fieldset>
 
               {/* Section 3: Advanced (collapsible) */}
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden">
+              <div className="bg-[#161820] border border-[#23262f] rounded-xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-[#161820] transition-colors"
                 >
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[hsl(230,10%,50%)]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#8b8d97]">
                     Advanced / Protocol Defaults
                   </span>
-                  <ChevronDown className={cn('w-4 h-4 text-[hsl(230,10%,50%)] transition-transform duration-200', showAdvanced && 'rotate-180')} />
+                  <ChevronDown className={cn('w-4 h-4 text-[#8b8d97] transition-transform duration-200', showAdvanced && 'rotate-180')} />
                 </button>
 
                 {showAdvanced && (
-                  <div className="border-t border-white/[0.06] px-6 py-5 space-y-3">
+                  <div className="border-t border-[#23262f] px-6 py-5 space-y-3">
                     {[
                       ['Reveal Window', '1 hour', 'Users reveal predictions after market locks'],
                       ['Dispute Window', '24 hours', 'Users can dispute incorrect resolution'],
                       ['Protocol Fee', '2%', 'Deducted from winnings on claim'],
                       ['Pool Currency', selectedToken, 'Token denomination for this market'],
                     ].map(([label, value, desc]) => (
-                      <div key={label} className="flex items-start justify-between py-2 border-b border-white/[0.04] last:border-0">
+                      <div key={label} className="flex items-start justify-between py-2 border-b border-[#23262f] last:border-0">
                         <div>
                           <p className="text-sm text-white/80">{label}</p>
-                          <p className="text-[10px] text-[hsl(230,10%,35%)]">{desc}</p>
+                          <p className="text-[10px] text-[#5a5c66]">{desc}</p>
                         </div>
                         <span className="text-sm font-mono text-white/60">{value}</span>
                       </div>
@@ -441,7 +441,7 @@ export default function AdminPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-xl shadow-blue-500/20 disabled:opacity-50"
+                className="w-full py-6 text-lg font-semibold bg-[#4b8cff] hover:bg-[#3a7bf0] disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
@@ -461,8 +461,8 @@ export default function AdminPage() {
           {/* Live Preview — Right Column */}
           <div className="lg:col-span-2">
             <div className="sticky top-24">
-              <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-2xl p-6 space-y-5">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[hsl(230,10%,50%)]">
+              <div className="bg-gradient-to-br from-[#161820] to-[#161820] border border-[#23262f] rounded-xl p-6 space-y-5">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8b8d97]">
                   Live Preview
                 </h3>
 
@@ -485,7 +485,7 @@ export default function AdminPage() {
 
                     {/* Subtitle */}
                     {form.description && (
-                      <p className="text-sm text-[hsl(230,10%,45%)] line-clamp-2">{form.description}</p>
+                      <p className="text-sm text-[#8b8d97] line-clamp-2">{form.description}</p>
                     )}
 
                     {/* Options */}
@@ -494,29 +494,29 @@ export default function AdminPage() {
                         <p className="text-xs text-blue-400/60 mb-1">Option A</p>
                         <p className="text-lg font-bold text-blue-400">{form.option_a_label}</p>
                       </div>
-                      <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl py-4 text-center">
+                      <div className="bg-[#1c1f2a] border border-[#23262f] rounded-xl py-4 text-center">
                         <p className="text-xs text-white/40 mb-1">Option B</p>
                         <p className="text-lg font-bold text-white/70">{form.option_b_label}</p>
                       </div>
                     </div>
 
                     {/* Info rows */}
-                    <div className="space-y-2 pt-2 border-t border-white/[0.06]">
+                    <div className="space-y-2 pt-2 border-t border-[#23262f]">
                       <div className="flex justify-between text-xs">
-                        <span className="text-[hsl(230,10%,40%)]">Oracle</span>
+                        <span className="text-[#5a5c66]">Oracle</span>
                         <span className="text-white/70">
                           {METRIC_TYPES.find(m => m.value === form.metric_type)?.label}
                         </span>
                       </div>
                       {form.threshold && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-[hsl(230,10%,40%)]">Threshold</span>
+                          <span className="text-[#5a5c66]">Threshold</span>
                           <span className="text-white/70 font-mono">{form.threshold}</span>
                         </div>
                       )}
                       {form.deadline && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-[hsl(230,10%,40%)]">Deadline</span>
+                          <span className="text-[#5a5c66]">Deadline</span>
                           <span className="text-white/70">
                             {new Date(form.deadline).toLocaleDateString('en-US', {
                               month: 'short', day: 'numeric', year: 'numeric',
@@ -526,18 +526,18 @@ export default function AdminPage() {
                         </div>
                       )}
                       <div className="flex justify-between text-xs">
-                        <span className="text-[hsl(230,10%,40%)]">Currency</span>
+                        <span className="text-[#5a5c66]">Currency</span>
                         <span className="text-white/70">{selectedToken}</span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-[hsl(230,10%,40%)]">Fee</span>
+                        <span className="text-[#5a5c66]">Fee</span>
                         <span className="text-white/70">2%</span>
                       </div>
                     </div>
                   </>
                 ) : (
                   <div className="py-10 text-center">
-                    <p className="text-sm text-[hsl(230,10%,35%)]">
+                    <p className="text-sm text-[#5a5c66]">
                       Fill in the form to see a live preview
                     </p>
                   </div>
