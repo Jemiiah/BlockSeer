@@ -33,10 +33,16 @@ export function EventDetail({ market, onBack }: EventDetailProps) {
   const tabIndicatorRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<Map<string, HTMLButtonElement>>(new Map());
 
-  const traderCount = onChainPool ? onChainPool.total_no_of_stakes : market.traders;
-  const volume = onChainPool
-    ? `${formatTokenAmount(onChainPool.total_staked, market.tokenId).toFixed(2)} ${market.tokenSymbol}`
-    : market.volume;
+  // During blind betting (pending/live), on-chain stakes are 0 — use Oracle data instead
+  const isPendingPhase = market.status === 'live' || !market.oddsRevealed;
+  const traderCount = isPendingPhase
+    ? market.traders
+    : (onChainPool ? onChainPool.total_no_of_stakes : market.traders);
+  const volume = isPendingPhase
+    ? market.volume
+    : (onChainPool
+      ? `${formatTokenAmount(onChainPool.total_staked, market.tokenId).toFixed(2)} ${market.tokenSymbol}`
+      : market.volume);
 
   const setTabRef = useCallback((key: string) => (el: HTMLButtonElement | null) => {
     if (el) tabsRef.current.set(key, el);
