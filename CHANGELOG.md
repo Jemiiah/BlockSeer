@@ -4,6 +4,21 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
+## [Unreleased] - Combined Oracle Process (API + Worker) - 2026-03-09
+
+### Changed — Oracle
+- **Combined API + Worker into single process** — Created `src/index.ts` that starts both the Express API server and the background worker loop in one process. Render (or any host) now only needs one service with `npm start` instead of running `npm run api` and `npm run worker` separately
+- **Refactored `api.ts` to export Express app** — `app` and `PORT` are now exported; the server only auto-listens when `api.ts` is run directly (preserving backward compatibility)
+- **Added `start` script to `package.json`** — `npm start` runs the combined entry point
+
+### Why
+All 7 production markets were stuck at "pending" because the Oracle worker was never running on Render — only the API was deployed. Without the worker, no market can progress through its lifecycle (create on-chain → lock at deadline → resolve with metric data → dispute detection). This fix ensures both processes run together.
+
+### Files Modified
+`Oracle/src/index.ts` (new), `Oracle/src/api.ts`, `Oracle/package.json`
+
+---
+
 ## [Unreleased] - Performance & Data Freshness Fixes - 2026-03-07
 
 ### Fixed — Frontend

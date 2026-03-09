@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsx src/index.ts",
     "cli": "npx tsx src/cli.ts",
     "worker": "npx tsx src/worker.ts",
     "api": "npx tsx src/api.ts",

@@ -386,7 +386,14 @@ app.get("/metrics", (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 API Server running on http://localhost:${PORT}`);
-    db.initDb();
-});
+// Export app for combined entry point
+export { app, PORT };
+
+// Auto-start only when run directly
+import { fileURLToPath } from "url";
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    app.listen(PORT, () => {
+        console.log(`🚀 API Server running on http://localhost:${PORT}`);
+        db.initDb();
+    });
+}
