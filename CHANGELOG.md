@@ -4,6 +4,13 @@ All notable changes to the Manifold (BlockSeer) project are documented here.
 
 ---
 
+## [Unreleased] - README Overhaul - 2026-03-11
+
+### Changed
+- **Complete README rewrite** — Replaced outdated README (referenced old program ID `predictionprivacyhackviii.aleo`, missing features) with comprehensive documentation covering: architecture diagrams, all 12 smart contract transitions, privacy model overview, trust model comparison, full setup instructions, project structure, security considerations, and tech stack
+
+---
+
 ## [Unreleased] - Combined Oracle Process (API + Worker) - 2026-03-09
 
 ### Changed — Oracle
