@@ -14,6 +14,9 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 export const metadata: Metadata = {
   title: 'Manifold - Blockchain Prediction Markets',
   description: 'Trade on crypto events with zero-knowledge privacy on Aleo.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, LogOut, Copy, Check, Search, X, Settings, BarChart3, Store, Zap, Wallet } from 'lucide-react';
+import { ManifoldLogo } from '@/components/ui/logo';
 import Link from 'next/link';
 import { useWallet } from '@provablehq/aleo-wallet-adaptor-react';
 import { cn, truncateAddress } from '@/lib/utils';
@@ -87,7 +88,8 @@ export function Navbar({
           <div className="flex items-center justify-between h-16">
             {/* Left: Logo + Nav */}
             <div className="flex items-center gap-8">
-              <div className="flex items-center cursor-pointer shrink-0" onClick={onLogoClick}>
+              <div className="flex items-center gap-2.5 cursor-pointer shrink-0" onClick={onLogoClick}>
+                <ManifoldLogo size={28} />
                 <span className="text-lg font-bold tracking-tight text-white">
                   Manifold
                 </span>
